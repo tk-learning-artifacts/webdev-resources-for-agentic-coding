@@ -16,6 +16,470 @@ function PageNavigation({ backTitle, onBack, nextTitle, onNext }) {
   );
 }
 
+const vscodeTourTools = [
+  {
+    id: "explorer",
+    label: "Explorer",
+    position: { left: "25%", top: "15%" },
+    popoverSide: "right",
+    explanation: "The Explorer shows the folders and files in your project. Select a file here to open it in the editor.",
+  },
+  {
+    id: "other-views",
+    label: "Other Views",
+    position: { left: "25%", top: "75%" },
+    popoverSide: "right",
+    explanation: "Outline shows the structure of the current file. Timeline shows its history, including saves and source-control changes.",
+  },
+  {
+    id: "source-control",
+    label: "Source Control",
+    position: { left: "3%", top: "28%" },
+    popoverSide: "right",
+    explanation: "Source Control opens a side panel where you can see which files changed, review those changes, and prepare a Git commit.",
+  },
+  {
+    id: "terminal",
+    label: "Integrated Terminal",
+    position: { left: "68%", top: "84%" },
+    popoverSide: "left",
+    explanation: "The integrated terminal lets you run commands, install packages, start development servers, and view command output without leaving VS Code.",
+  },
+  {
+    id: "chatbox",
+    label: "Chatbox",
+    position: { left: "72%", top: "16%" },
+    popoverSide: "left",
+    explanation: "Copilot Chat provides a place to ask questions about code, request explanations, and get help while working on a project.",
+  },
+];
+
+const gitWorkflowSteps = [
+  {
+    label: "Edit file",
+    command: "Edit index.html",
+    success: "Nice — index.html now has unsaved Git changes.",
+  },
+  {
+    label: "Stage",
+    command: "git add .",
+    success: "Staged! Git is now preparing index.html for the next commit.",
+  },
+  {
+    label: "Commit",
+    command: "git commit",
+    success: "Committed! The staged version is now saved in your local repository.",
+  },
+  {
+    label: "Push",
+    command: "git push",
+    success: "Pushed! Your commit is now available in the remote repository.",
+  },
+];
+
+const gitWorkflowStops = [
+  { label: "Working tree", detail: "Edited" },
+  { label: "Staging area", detail: "Added" },
+  { label: "Local repo", detail: "Committed" },
+  { label: "Remote repo", detail: "Pushed" },
+];
+
+const actionStepOptions = [
+  {
+    id: "checkout",
+    label: "Checkout",
+    yaml: "      - uses: actions/checkout@v4",
+    detail: "Repository ready",
+  },
+  {
+    id: "install",
+    label: "Install",
+    yaml: "      - run: npm install",
+    detail: "Dependencies installed",
+  },
+  {
+    id: "test",
+    label: "Test",
+    yaml: "      - run: npm test",
+    detail: "Tests passed",
+  },
+  {
+    id: "build",
+    label: "Build",
+    yaml: "      - run: npm run build",
+    detail: "Build completed",
+  },
+];
+
+function ActionsWorkflowBuilder() {
+  const [trigger, setTrigger] = useState("");
+  const [runner, setRunner] = useState("");
+  const [selectedSteps, setSelectedSteps] = useState([]);
+  const [runSteps, setRunSteps] = useState([]);
+  const [runIndex, setRunIndex] = useState(-1);
+  const [runStatus, setRunStatus] = useState("idle");
+  const [challengeFixed, setChallengeFixed] = useState(false);
+
+  const toggleStep = (stepId) => {
+    setRunStatus("idle");
+    setRunIndex(-1);
+    setSelectedSteps((current) =>
+      current.includes(stepId)
+        ? current.filter((id) => id !== stepId)
+        : actionStepOptions
+            .filter((step) => [...current, stepId].includes(step.id))
+            .map((step) => step.id),
+    );
+  };
+
+  const startWorkflow = () => {
+    if (!trigger || !runner || !selectedSteps.length || runStatus === "running") return;
+    setRunSteps(selectedSteps);
+    setRunIndex(0);
+    setRunStatus("running");
+  };
+
+  useEffect(() => {
+    if (runStatus !== "running" || runIndex < 0) return undefined;
+
+    const timer = window.setTimeout(() => {
+      if (runIndex === runSteps.length - 1) {
+        setRunStatus("success");
+        setRunIndex(runSteps.length);
+      } else {
+        setRunIndex((current) => current + 1);
+      }
+    }, 650);
+
+    return () => window.clearTimeout(timer);
+  }, [runIndex, runStatus, runSteps.length]);
+
+  const yaml = [
+    "name: CI",
+    trigger ? `on: [${trigger}]` : "# Select a trigger",
+    "jobs:",
+    "  build:",
+    runner ? `    runs-on: ${runner}` : "    # Select a runner",
+    "    steps:",
+    ...(selectedSteps.length
+      ? actionStepOptions
+          .filter((step) => selectedSteps.includes(step.id))
+          .map((step) => step.yaml)
+      : ["      # Select at least one step"]),
+  ].join("\n");
+
+  return (
+    <div className="actions-builder" aria-labelledby="actions-builder-title">
+      <div className="actions-builder__heading">
+        <div>
+          <span>BUILD IT YOURSELF</span>
+          <h4 id="actions-builder-title">Create a workflow</h4>
+        </div>
+        <p>Select the blocks. Your YAML updates instantly.</p>
+      </div>
+
+      <div className="actions-builder__workspace">
+        <div className="actions-builder__controls">
+          <fieldset>
+            <legend>Trigger</legend>
+            <div className="actions-choice-row">
+              {[
+                ["push", "Push"],
+                ["pull_request", "Pull Request"],
+              ].map(([value, label]) => (
+                <button
+                  type="button"
+                  className={trigger === value ? "is-selected" : ""}
+                  aria-pressed={trigger === value}
+                  onClick={() => {
+                    setTrigger(value);
+                    setRunStatus("idle");
+                    setRunIndex(-1);
+                  }}
+                  key={value}
+                >
+                  <span className="actions-choice__icon" aria-hidden="true">{"{ }"}</span>
+                  {label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Runner</legend>
+            <div className="actions-choice-row">
+              {[
+                ["ubuntu-latest", "Ubuntu"],
+                ["windows-latest", "Windows"],
+              ].map(([value, label]) => (
+                <button
+                  type="button"
+                  className={runner === value ? "is-selected" : ""}
+                  aria-pressed={runner === value}
+                  onClick={() => {
+                    setRunner(value);
+                    setRunStatus("idle");
+                    setRunIndex(-1);
+                  }}
+                  key={value}
+                >
+                  <span className="actions-choice__dot" aria-hidden="true" />
+                  {label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend>Steps</legend>
+            <div className="actions-step-grid">
+              {actionStepOptions.map((step, index) => {
+                const isSelected = selectedSteps.includes(step.id);
+                const runPosition = runSteps.indexOf(step.id);
+                const isComplete =
+                  runStatus === "success" ||
+                  (runStatus === "running" && runPosition >= 0 && runPosition < runIndex);
+                const isRunning =
+                  runStatus === "running" && runPosition === runIndex;
+
+                return (
+                  <button
+                    type="button"
+                    className={`${isSelected ? "is-selected" : ""} ${isComplete ? "is-complete" : ""} ${isRunning ? "is-running" : ""}`}
+                    aria-pressed={isSelected}
+                    onClick={() => toggleStep(step.id)}
+                    key={step.id}
+                  >
+                    <span aria-hidden="true">
+                      {isComplete ? "✓" : index + 1}
+                    </span>
+                    <span>
+                      <strong>{step.label}</strong>
+                      <small>
+                        {isRunning ? "Running…" : isComplete ? step.detail : "Add step"}
+                      </small>
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </fieldset>
+
+          <button
+            type="button"
+            className={`actions-run-button ${runStatus === "success" ? "is-success" : ""}`}
+            onClick={startWorkflow}
+            disabled={!trigger || !runner || !selectedSteps.length || runStatus === "running"}
+          >
+            <span aria-hidden="true">{runStatus === "success" ? "✓" : "▶"}</span>
+            {runStatus === "running"
+              ? "Workflow running…"
+              : runStatus === "success"
+                ? "All checks passed"
+                : "Run workflow"}
+          </button>
+        </div>
+
+        <div className="actions-yaml">
+          <div className="actions-yaml__bar">
+            <span><i aria-hidden="true" /> ci.yml</span>
+            <small>LIVE YAML</small>
+          </div>
+          <pre aria-live="polite">{yaml}</pre>
+          <div className={`actions-run-status is-${runStatus}`} role="status">
+            <span aria-hidden="true">
+              {runStatus === "success" ? "✓" : runStatus === "running" ? "●" : "○"}
+            </span>
+            {runStatus === "success"
+              ? "Workflow completed successfully"
+              : runStatus === "running"
+                ? `Running ${actionStepOptions.find((step) => step.id === runSteps[runIndex])?.label || "workflow"}`
+                : !trigger && !runner && !selectedSteps.length
+                  ? "Choose blocks to begin"
+                  : `${selectedSteps.length} step${selectedSteps.length === 1 ? "" : "s"} ready`}
+          </div>
+        </div>
+      </div>
+
+      <details className="actions-challenge" onToggle={(event) => {
+        if (!event.currentTarget.open) setChallengeFixed(false);
+      }}>
+        <summary>
+          <span>
+            <strong>Challenge</strong>
+            Fix a broken workflow
+          </span>
+          <small>npm test is running too soon</small>
+        </summary>
+        <div className="actions-challenge__content">
+          <div className="actions-challenge__steps">
+            <code>1&nbsp; checkout</code>
+            <code className={challengeFixed ? "" : "is-broken"}>
+              2&nbsp; {challengeFixed ? "npm install" : "npm test"}
+            </code>
+            <code className={challengeFixed ? "" : "is-broken"}>
+              3&nbsp; {challengeFixed ? "npm test" : "npm install"}
+            </code>
+          </div>
+          <button type="button" onClick={() => setChallengeFixed(true)} disabled={challengeFixed}>
+            {challengeFixed ? "✓ Order fixed" : "Move npm install before test"}
+          </button>
+        </div>
+        {challengeFixed && (
+          <p className="actions-challenge__success" role="status">
+            Correct! Dependencies must be installed before the tests can use them.
+          </p>
+        )}
+      </details>
+    </div>
+  );
+}
+
+function GitWorkflowActivity() {
+  const [workflowStep, setWorkflowStep] = useState(0);
+  const [workflowMessage, setWorkflowMessage] = useState(
+    "Start by making a small change to index.html.",
+  );
+  const [messageTone, setMessageTone] = useState("hint");
+  const [branchStep, setBranchStep] = useState(0);
+
+  const runWorkflowAction = (actionIndex) => {
+    if (actionIndex === workflowStep) {
+      const nextStep = workflowStep + 1;
+      setWorkflowStep(nextStep);
+      setWorkflowMessage(gitWorkflowSteps[actionIndex].success);
+      setMessageTone(nextStep === gitWorkflowSteps.length ? "complete" : "success");
+      return;
+    }
+
+    setMessageTone("warning");
+
+    if (actionIndex < workflowStep) {
+      setWorkflowMessage(
+        `${gitWorkflowSteps[actionIndex].command} is already complete. Continue with ${gitWorkflowSteps[workflowStep]?.command || "the finished workflow"}.`,
+      );
+    } else if (actionIndex === 1) {
+      setWorkflowMessage("There is nothing to stage yet. Edit index.html first so Git has a change to add.");
+    } else if (actionIndex === 2) {
+      setWorkflowMessage(
+        workflowStep === 0
+          ? "git commit cannot save this file yet. Edit it, then stage it with git add ."
+          : "git commit saves staged changes only. Run git add . first.",
+      );
+    } else {
+      setWorkflowMessage("git push sends commits, not loose file changes. Create a commit before pushing.");
+    }
+  };
+
+  const resetWorkflow = () => {
+    setWorkflowStep(0);
+    setWorkflowMessage("Start by making a small change to index.html.");
+    setMessageTone("hint");
+  };
+
+  const runBranchStep = () => {
+    setBranchStep((current) => Math.min(current + 1, 3));
+  };
+
+  const activeStop = Math.max(0, workflowStep - 1);
+
+  return (
+    <div className="git-practice" aria-labelledby="git-practice-title">
+      <div className="git-practice__header">
+        <div>
+          <span className="git-practice__eyebrow">TRY IT YOURSELF</span>
+          <h4 id="git-practice-title">Move a change through Git</h4>
+          <p>Choose each action in the order Git expects.</p>
+        </div>
+        <span className="git-practice__counter">
+          {Math.min(workflowStep, 4)}/4 done
+        </span>
+      </div>
+
+      <div
+        className="git-file-track"
+        style={{ "--active-stop": activeStop }}
+        aria-label={`index.html is at ${gitWorkflowStops[activeStop].label}`}
+      >
+        <div className="git-file-track__line" aria-hidden="true">
+          <span style={{ width: `${(activeStop / 3) * 100}%` }} />
+        </div>
+        {gitWorkflowStops.map((stop, index) => (
+          <div
+            className={`git-file-stop ${index < activeStop ? "is-complete" : ""} ${index === activeStop ? "is-active" : ""}`}
+            key={stop.label}
+          >
+            <span className="git-file-stop__dot" aria-hidden="true">
+              {index < activeStop ? "✓" : index + 1}
+            </span>
+            <strong>{stop.label}</strong>
+            <small>{stop.detail}</small>
+          </div>
+        ))}
+        <div className="git-file-token" aria-hidden="true">
+          <span>HTML</span>
+          index.html
+        </div>
+      </div>
+
+      <div className="git-practice__actions" aria-label="Git workflow actions">
+        {gitWorkflowSteps.map((step, index) => (
+          <button
+            type="button"
+            className={index < workflowStep ? "is-done" : ""}
+            onClick={() => runWorkflowAction(index)}
+            key={step.command}
+          >
+            <span>{index < workflowStep ? "✓" : index + 1}</span>
+            <span>
+              <small>{step.label}</small>
+              <code>{step.command}</code>
+            </span>
+          </button>
+        ))}
+      </div>
+
+      <div
+        className={`git-practice__feedback is-${messageTone}`}
+        role="status"
+        aria-live="polite"
+      >
+        <span aria-hidden="true">
+          {messageTone === "warning" ? "!" : messageTone === "complete" ? "✓" : "i"}
+        </span>
+        <p>{workflowMessage}</p>
+        {workflowStep === 4 && (
+          <button type="button" onClick={resetWorkflow}>Try again</button>
+        )}
+      </div>
+
+      <details className="branch-practice" onToggle={(event) => {
+        if (!event.currentTarget.open) setBranchStep(0);
+      }}>
+        <summary>Bonus: create and merge a branch</summary>
+        <p>See a feature branch split from main, then join it again.</p>
+        <div className={`branch-visual branch-visual--step-${branchStep}`} aria-hidden="true">
+          <div className="branch-visual__main"><span>main</span></div>
+          <div className="branch-visual__feature"><span>feature</span></div>
+          <span className="branch-visual__node branch-visual__node--start" />
+          <span className="branch-visual__node branch-visual__node--work" />
+          <span className="branch-visual__node branch-visual__node--merge" />
+        </div>
+        {branchStep < 3 ? (
+          <button type="button" className="branch-practice__button" onClick={runBranchStep}>
+            {["git switch -c feature", "commit feature work", "git merge feature"][branchStep]}
+          </button>
+        ) : (
+          <div className="branch-practice__done">
+            <span aria-hidden="true">✓</span> Feature merged into main.
+            <button type="button" onClick={() => setBranchStep(0)}>Reset</button>
+          </div>
+        )}
+      </details>
+    </div>
+  );
+}
+
 export default function WebDevToolchain101() {
   const [slide, setSlide] = useState("slide1");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -24,6 +488,8 @@ export default function WebDevToolchain101() {
   const [graded, setGraded] = useState(false);
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizDirection, setQuizDirection] = useState("next");
+  const [activeVscodeTool, setActiveVscodeTool] = useState(null);
+  const [exploredVscodeTools, setExploredVscodeTools] = useState(() => new Set());
 
   const menuSections = [
     {
@@ -159,6 +625,15 @@ export default function WebDevToolchain101() {
     setQuizIndex(nextIndex);
   };
 
+  const exploreVscodeTool = (toolId) => {
+    setActiveVscodeTool(toolId);
+    setExploredVscodeTools((current) => {
+      const updated = new Set(current);
+      updated.add(toolId);
+      return updated;
+    });
+  };
+
   const selectAnswer = (qIndex, optIndex) => {
     const copy = [...answers];
     copy[qIndex] = optIndex;
@@ -194,6 +669,11 @@ export default function WebDevToolchain101() {
 
   const score = answers.filter((a, i) => a === quiz[i].a).length;
   const currentQuizItem = quiz[quizIndex];
+  const selectedVscodeTool = vscodeTourTools.find(
+    (tool) => tool.id === activeVscodeTool,
+  );
+  const vscodeTourComplete =
+    exploredVscodeTools.size === vscodeTourTools.length;
   const headerTitles = {
     slide1: "Web Dev Toolchain 101",
     slideVSCode: "VS Code",
@@ -327,34 +807,58 @@ export default function WebDevToolchain101() {
 
           {/* Slide 1 - Module Grid */}
           {slide === "slide1" && (
-            <section className="card" id="home-overview">
-              <h2>Welcome!</h2>
-              <p>Select a module below to begin learning:</p>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '20px' }}>
-                <div className="card module-card" onClick={() => goToSlide('slideVSCode')}>
-                  <h3>💻 VS Code Basics</h3>
-                  <p>Learn the essentials of Visual Studio Code.</p>
+            <section className="home-page" id="home-overview">
+              <div className="learning-path__header">
+                <div>
+                  <span className="home-eyebrow">COURSE MODULES</span>
+                  <h2>Your learning path</h2>
                 </div>
-                <div className="card module-card" onClick={() => goToSlide('slide2')}>
-                  <h3>🧩 Git Basics</h3>
-                  <p>Learn what Git is and how version control works.</p>
-                </div>
-                <div className="card module-card" onClick={() => goToSlide('slide3')}>
-                  <h3>🐙 GitHub</h3>
-                  <p>Understand online repos and collaboration.</p>
-                </div>
-                <div className="card module-card" onClick={() => goToSlide('slide4')}>
-                  <h3>⚙️ GitHub Actions</h3>
-                  <p>Automate tasks with CI/CD.</p>
-                </div>
-                <div className="card module-card" onClick={() => goToSlide('slide5')}>
-                  <h3>⚡ Vite</h3>
-                  <p>Build super-fast frontend apps.</p>
-                </div>
-                <div className="card module-card" onClick={() => goToSlide('slide9')}>
-                  <h3>▲ Vercel</h3>
-                  <p>Deploy your Git repo to the web.</p>
-                </div>
+                <p>Follow the modules in order or jump directly to the topic you need.</p>
+              </div>
+
+              <div className="module-grid">
+                <button type="button" className="module-card" onClick={() => goToSlide('slideVSCode')}>
+                  <span className="module-card__number">01</span>
+                  <span className="module-card__icon" aria-hidden="true">💻</span>
+                  <h3>VS Code Basics</h3>
+                  <p>Learn your way around the editor and its essential tools.</p>
+                  <span className="module-card__link">Start module →</span>
+                </button>
+                <button type="button" className="module-card" onClick={() => goToSlide('slide2')}>
+                  <span className="module-card__number">02</span>
+                  <span className="module-card__icon" aria-hidden="true">🧩</span>
+                  <h3>Git Basics</h3>
+                  <p>Track changes, save snapshots, and work safely with branches.</p>
+                  <span className="module-card__link">Start module →</span>
+                </button>
+                <button type="button" className="module-card" onClick={() => goToSlide('slide3')}>
+                  <span className="module-card__number">03</span>
+                  <span className="module-card__icon" aria-hidden="true">🐙</span>
+                  <h3>GitHub</h3>
+                  <p>Store projects online and collaborate through pull requests.</p>
+                  <span className="module-card__link">Start module →</span>
+                </button>
+                <button type="button" className="module-card" onClick={() => goToSlide('slide4')}>
+                  <span className="module-card__number">04</span>
+                  <span className="module-card__icon" aria-hidden="true">⚙️</span>
+                  <h3>GitHub Actions</h3>
+                  <p>Automate testing, building, and other repeated tasks.</p>
+                  <span className="module-card__link">Start module →</span>
+                </button>
+                <button type="button" className="module-card" onClick={() => goToSlide('slide5')}>
+                  <span className="module-card__number">05</span>
+                  <span className="module-card__icon" aria-hidden="true">⚡</span>
+                  <h3>Vite</h3>
+                  <p>Build frontend projects with a fast local development server.</p>
+                  <span className="module-card__link">Start module →</span>
+                </button>
+                <button type="button" className="module-card" onClick={() => goToSlide('slide9')}>
+                  <span className="module-card__number">06</span>
+                  <span className="module-card__icon module-card__icon--vercel" aria-hidden="true">▲</span>
+                  <h3>Vercel</h3>
+                  <p>Turn Git pushes into previews and production deployments.</p>
+                  <span className="module-card__link">Start module →</span>
+                </button>
               </div>
             </section>
           )}
@@ -656,13 +1160,13 @@ export default function WebDevToolchain101() {
                   </div>
                 </div>
 
-                <ol className="simple-workflow">
-                  <li><span>1</span><p>Open the project overview and select <strong>Instant Rollback</strong>.</p></li>
-                  <li><span>2</span><p>Choose the last known working production deployment.</p></li>
-                  <li><span>3</span><p>Verify the domains and deployment, then confirm the rollback.</p></li>
-                  <li><span>4</span><p>Reload the website and check production logs to confirm the errors have stopped.</p></li>
-                  <li><span>5</span><p>Fix the problem and test it using a Preview deployment.</p></li>
-                  <li><span>6</span><p>Promote the corrected deployment to Production to restore normal automatic deployments.</p></li>
+                <ol className="recovery-steps">
+                  <li><span>Step 1</span><p>Open the project overview and select <strong>Instant Rollback</strong>.</p></li>
+                  <li><span>Step 2</span><p>Choose the last known working production deployment.</p></li>
+                  <li><span>Step 3</span><p>Verify the domains and deployment, then confirm the rollback.</p></li>
+                  <li><span>Step 4</span><p>Reload the website and check production logs to confirm the errors have stopped.</p></li>
+                  <li><span>Step 5</span><p>Fix the problem and test it using a Preview deployment.</p></li>
+                  <li><span>Step 6</span><p>Promote the corrected deployment to Production to restore normal automatic deployments.</p></li>
                 </ol>
 
                 <div className="rollback-warning">
@@ -744,13 +1248,89 @@ vercel logs --environment production --status-code 5xx --since 5m`}</pre>
                     <p>Use this annotated view to locate the editor’s most important tools.</p>
                   </div>
                 </div>
-                <figure className="vscode-diagram">
-                  <img
-                    src="/images/vscode-basics.png"
-                    alt="Annotated Visual Studio Code interface showing the Explorer, Extensions, other views, Copilot chatbox, and integrated terminal."
-                    loading="lazy"
-                  />
-                </figure>
+                <div className="vscode-tour">
+                  <div className="vscode-tour__progress">
+                    <div>
+                      <strong>{exploredVscodeTools.size} of {vscodeTourTools.length}</strong>
+                      <span> features explored</span>
+                    </div>
+                    <div
+                      className="vscode-tour__progress-track"
+                      role="progressbar"
+                      aria-label="VS Code interface tour progress"
+                      aria-valuemin="0"
+                      aria-valuemax={vscodeTourTools.length}
+                      aria-valuenow={exploredVscodeTools.size}
+                    >
+                      <span
+                        style={{
+                          width: `${(exploredVscodeTools.size / vscodeTourTools.length) * 100}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
+
+                  <figure className="vscode-diagram">
+                    <div className="vscode-tour__image">
+                      <img
+                        src="/images/vscode-pic.png"
+                        alt="Visual Studio Code interface highlighting Explorer, Source Control, other views, the terminal, and Copilot chat."
+                        loading="lazy"
+                      />
+                      {vscodeTourTools.map((tool, index) => {
+                        const isActive = activeVscodeTool === tool.id;
+                        const isExplored = exploredVscodeTools.has(tool.id);
+
+                        return (
+                          <button
+                            type="button"
+                            key={tool.id}
+                            className={`vscode-tour__marker ${isActive ? "is-active" : ""} ${isExplored ? "is-explored" : ""}`}
+                            style={tool.position}
+                            aria-label={`Explore ${tool.label}`}
+                            aria-pressed={isActive}
+                            onClick={() => exploreVscodeTool(tool.id)}
+                          >
+                            <span aria-hidden="true">{isExplored ? "✓" : index + 1}</span>
+                          </button>
+                        );
+                      })}
+
+                      {selectedVscodeTool && (
+                        <div
+                          className={`vscode-tour__popover vscode-tour__popover--${selectedVscodeTool.popoverSide}`}
+                          style={selectedVscodeTool.position}
+                          role="dialog"
+                          aria-label={`${selectedVscodeTool.label} explanation`}
+                        >
+                          <button
+                            type="button"
+                            className="vscode-tour__popover-close"
+                            aria-label="Close explanation"
+                            onClick={() => setActiveVscodeTool(null)}
+                          >
+                            ×
+                          </button>
+                          <span className="vscode-tour__popover-label">
+                            FEATURE {vscodeTourTools.findIndex((tool) => tool.id === selectedVscodeTool.id) + 1} OF {vscodeTourTools.length}
+                          </span>
+                          <strong>{selectedVscodeTool.label}</strong>
+                          <p>{selectedVscodeTool.explanation}</p>
+                        </div>
+                      )}
+                    </div>
+                  </figure>
+
+                  {vscodeTourComplete && (
+                    <div className="vscode-tour__complete" role="status">
+                      <span aria-hidden="true">✓</span>
+                      <div>
+                        <strong>Interface tour complete!</strong>
+                        <p>You explored all five highlighted features of VS Code.</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               </section>
 
               <PageNavigation
@@ -826,6 +1406,8 @@ vercel logs --environment production --status-code 5xx --since 5m`}</pre>
                   />
                   <figcaption>Git workflow: edit, stage, commit, then push. Branches let multiple streams of work develop safely.</figcaption>
                 </figure>
+
+                <GitWorkflowActivity />
               </section>
 
               <section className="git-lesson__section" aria-labelledby="git-commands">
@@ -996,6 +1578,7 @@ vercel logs --environment production --status-code 5xx --since 5m`}</pre>
                     </div>
                   </div>
                 </div>
+                <ActionsWorkflowBuilder />
               </section>
 
               <PageNavigation
