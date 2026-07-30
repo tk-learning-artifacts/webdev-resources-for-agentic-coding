@@ -16,6 +16,174 @@ function PageNavigation({ backTitle, onBack, nextTitle, onNext }) {
   );
 }
 
+const deploymentScenarios = [
+  {
+    id: "feature",
+    label: "Push to feature/homepage",
+    source: "feature/homepage",
+    commit: "Homepage updates",
+    destination: "Preview",
+    environment: "Preview environment",
+    url: "webdev-git-feature-homepage.vercel.app",
+    result: "New Preview URL",
+    tone: "preview",
+  },
+  {
+    id: "pull-request",
+    label: "Update a pull request",
+    source: "PR #24",
+    commit: "Latest review changes",
+    destination: "Preview",
+    environment: "Preview environment",
+    url: "webdev-git-pr-24.vercel.app",
+    result: "Updated Preview",
+    tone: "preview",
+  },
+  {
+    id: "main",
+    label: "Push to main",
+    source: "main",
+    commit: "Direct production update",
+    destination: "Production",
+    environment: "Production environment",
+    url: "webdev-git.vercel.app",
+    result: "Production domain",
+    tone: "production",
+  },
+  {
+    id: "merge",
+    label: "Merge a pull request into main",
+    source: "PR #24 → main",
+    commit: "Approved homepage",
+    destination: "Production",
+    environment: "Production environment",
+    url: "webdev-git.vercel.app",
+    result: "Production domain updated",
+    tone: "production",
+  },
+];
+
+function DeploymentFlowLab() {
+  const [scenarioId, setScenarioId] = useState(null);
+  const [phase, setPhase] = useState(-1);
+  const scenario = deploymentScenarios.find(({ id }) => id === scenarioId) || deploymentScenarios[0];
+
+  const runScenario = (nextId = scenario.id) => {
+    setScenarioId(nextId);
+    setPhase(0);
+  };
+
+  useEffect(() => {
+    if (phase < 0 || phase >= 3) return undefined;
+
+    const timer = window.setTimeout(
+      () => setPhase((current) => current + 1),
+      phase === 0 ? 350 : 850,
+    );
+
+    return () => window.clearTimeout(timer);
+  }, [phase]);
+
+  return (
+    <div className={`deployment-lab deployment-lab--${scenario.tone}`}>
+      <div className="deployment-lab__header">
+        <div>
+          <span className="deployment-lab__eyebrow">TRY THE DEPLOYMENT FLOW</span>
+          <h4>What happens after this Git action?</h4>
+        </div>
+        <p>Choose an action and follow it from GitHub to its website.</p>
+      </div>
+
+      <div className="deployment-lab__actions" aria-label="Choose a Git action">
+        {deploymentScenarios.map((option) => (
+          <button
+            type="button"
+            key={option.id}
+            className={scenarioId === option.id ? "is-selected" : ""}
+            aria-pressed={scenarioId === option.id}
+            onClick={() => runScenario(option.id)}
+          >
+            <span aria-hidden="true">{option.id === "merge" ? "⑂" : "↑"}</span>
+            {option.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="deployment-lab__stage" aria-live="polite">
+        <div className={`deployment-node deployment-node--github ${phase >= 1 ? "is-active" : ""}`}>
+          <span className="deployment-node__icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2.7a9.5 9.5 0 0 0-3 18.5c.5.1.7-.2.7-.5v-1.9c-2.8.6-3.4-1.2-3.4-1.2-.5-1.2-1.1-1.5-1.1-1.5-.9-.6.1-.6.1-.6 1 0 1.6 1.1 1.6 1.1.9 1.6 2.4 1.1 2.9.8.1-.7.4-1.1.7-1.3-2.3-.3-4.6-1.1-4.6-4.7 0-1 .4-1.9 1-2.6-.1-.3-.4-1.3.1-2.6 0 0 .8-.3 2.7 1a9.2 9.2 0 0 1 4.9 0c1.9-1.3 2.7-1 2.7-1 .5 1.3.2 2.3.1 2.6.6.7 1 1.6 1 2.6 0 3.7-2.3 4.5-4.6 4.7.4.3.7 1 .7 1.9v2.7c0 .4.2.6.7.5A9.5 9.5 0 0 0 12 2.7Z" />
+            </svg>
+          </span>
+          <span className="deployment-node__copy">
+            <small>GITHUB</small>
+            <strong>{scenario.source}</strong>
+            <span>{phase >= 1 ? "Push received" : scenario.commit}</span>
+          </span>
+          {phase >= 1 && <span className="deployment-node__check" aria-hidden="true">✓</span>}
+        </div>
+
+        <div className={`deployment-connector ${phase >= 2 ? "is-active" : ""}`} aria-hidden="true">
+          <span />
+          <b>›</b>
+        </div>
+
+        <div className={`deployment-node deployment-node--vercel ${phase >= 2 ? "is-active" : ""}`}>
+          <span className="deployment-node__icon deployment-node__icon--vercel" aria-hidden="true">▲</span>
+          <span className="deployment-node__copy">
+            <small>VERCEL</small>
+            <strong>{phase === 2 ? "Building…" : "Build project"}</strong>
+            <span>{phase >= 3 ? "Build successful" : phase >= 2 ? "Running npm run build" : "Waiting for GitHub"}</span>
+          </span>
+          {phase >= 3 && <span className="deployment-node__check" aria-hidden="true">✓</span>}
+        </div>
+
+        <div className={`deployment-connector ${phase >= 3 ? "is-active" : ""}`} aria-hidden="true">
+          <span />
+          <b>›</b>
+        </div>
+
+        <div className={`deployment-node deployment-node--result ${phase >= 3 ? "is-active" : ""}`}>
+          <span className="deployment-node__icon" aria-hidden="true">
+            {scenario.tone === "preview" ? "◉" : "●"}
+          </span>
+          <span className="deployment-node__copy">
+            <small>{scenario.destination.toUpperCase()}</small>
+            <strong>{scenario.result}</strong>
+            <span>{scenario.environment}</span>
+          </span>
+        </div>
+      </div>
+
+      <div
+        className={`deployment-lab__result ${phase >= 3 ? "is-visible" : ""}`}
+        aria-hidden={phase < 3}
+      >
+        <div>
+          <span className="deployment-lab__status">
+            <i aria-hidden="true" />
+            {scenario.environment}
+          </span>
+          <strong>{scenario.result}</strong>
+        </div>
+        <a href={`https://${scenario.url}`} target="_blank" rel="noreferrer" tabIndex={phase >= 3 ? 0 : -1}>
+          <span>{scenario.url}</span>
+          <span aria-hidden="true">↗</span>
+        </a>
+        <button
+          type="button"
+          onClick={() => runScenario()}
+          aria-label="Replay this deployment"
+          tabIndex={phase >= 3 ? 0 : -1}
+        >
+          ↻ Replay
+        </button>
+      </div>
+    </div>
+  );
+}
+
 const vscodeTourTools = [
   {
     id: "explorer",
@@ -54,34 +222,42 @@ const vscodeTourTools = [
   },
 ];
 
-const gitWorkflowSteps = [
+const gitFlowSlides = [
   {
-    label: "Edit file",
+    title: "Edit the file",
     command: "Edit index.html",
-    success: "Nice — index.html now has unsaved Git changes.",
+    image: new URL("../images/gitflow1.png", import.meta.url).href,
+    alt: "VS Code showing index.html as a new untracked file before it is staged.",
+    explanation: "The U badge means index.html is untracked. Git can see the new file, but it is not ready to commit yet.",
+    highlightTone: "red",
+    highlights: [
+      { label: "Untracked index.html file", style: { left: "5.4%", top: "10.4%", width: "22.2%", height: "6.6%" } },
+    ],
   },
   {
-    label: "Stage",
-    command: "git add .",
-    success: "Staged! Git is now preparing index.html for the next commit.",
+    title: "Stage the change",
+    command: "git add index.html",
+    image: new URL("../images/gitflow2.png", import.meta.url).href,
+    alt: "VS Code showing index.html under Staged Changes after git add index.html.",
+    explanation: "git add moves index.html into Staged Changes. It is now selected for the next commit.",
+    highlightTone: "red",
+    highlights: [
+      { label: "Staged Changes section", style: { left: "4.7%", top: "28.4%", width: "24.3%", height: "12.5%" } },
+      { label: "git add command", style: { left: "30.7%", top: "80.8%", width: "35.5%", height: "6.4%" } },
+    ],
   },
   {
-    label: "Commit",
-    command: "git commit",
-    success: "Committed! The staged version is now saved in your local repository.",
+    title: "Commit the change",
+    command: 'git commit -m "created index.html file"',
+    image: new URL("../images/gitflow3.png", import.meta.url).href,
+    alt: "VS Code showing a successful commit and no files left in Staged Changes.",
+    explanation: "The commit saves the staged file as a snapshot. The zero badges confirm there are no changes left to commit.",
+    highlightTone: "red",
+    highlights: [
+      { label: "Clean change lists", style: { left: "5.4%", top: "29.7%", width: "23.2%", height: "11%" } },
+      { label: "git commit command and output", style: { left: "30.7%", top: "76.8%", width: "53.5%", height: "14.2%" } },
+    ],
   },
-  {
-    label: "Push",
-    command: "git push",
-    success: "Pushed! Your commit is now available in the remote repository.",
-  },
-];
-
-const gitWorkflowStops = [
-  { label: "Working tree", detail: "Edited" },
-  { label: "Staging area", detail: "Added" },
-  { label: "Local repo", detail: "Committed" },
-  { label: "Remote repo", detail: "Pushed" },
 ];
 
 const actionStepOptions = [
@@ -336,146 +512,294 @@ function ActionsWorkflowBuilder() {
 }
 
 function GitWorkflowActivity() {
-  const [workflowStep, setWorkflowStep] = useState(0);
-  const [workflowMessage, setWorkflowMessage] = useState(
-    "Start by making a small change to index.html.",
-  );
-  const [messageTone, setMessageTone] = useState("hint");
-  const [branchStep, setBranchStep] = useState(0);
+  const [slideIndex, setSlideIndex] = useState(0);
+  const currentSlide = gitFlowSlides[slideIndex];
 
-  const runWorkflowAction = (actionIndex) => {
-    if (actionIndex === workflowStep) {
-      const nextStep = workflowStep + 1;
-      setWorkflowStep(nextStep);
-      setWorkflowMessage(gitWorkflowSteps[actionIndex].success);
-      setMessageTone(nextStep === gitWorkflowSteps.length ? "complete" : "success");
-      return;
-    }
-
-    setMessageTone("warning");
-
-    if (actionIndex < workflowStep) {
-      setWorkflowMessage(
-        `${gitWorkflowSteps[actionIndex].command} is already complete. Continue with ${gitWorkflowSteps[workflowStep]?.command || "the finished workflow"}.`,
-      );
-    } else if (actionIndex === 1) {
-      setWorkflowMessage("There is nothing to stage yet. Edit index.html first so Git has a change to add.");
-    } else if (actionIndex === 2) {
-      setWorkflowMessage(
-        workflowStep === 0
-          ? "git commit cannot save this file yet. Edit it, then stage it with git add ."
-          : "git commit saves staged changes only. Run git add . first.",
-      );
-    } else {
-      setWorkflowMessage("git push sends commits, not loose file changes. Create a commit before pushing.");
-    }
+  const moveSlide = (direction) => {
+    setSlideIndex((current) =>
+      (current + direction + gitFlowSlides.length) % gitFlowSlides.length,
+    );
   };
-
-  const resetWorkflow = () => {
-    setWorkflowStep(0);
-    setWorkflowMessage("Start by making a small change to index.html.");
-    setMessageTone("hint");
-  };
-
-  const runBranchStep = () => {
-    setBranchStep((current) => Math.min(current + 1, 3));
-  };
-
-  const activeStop = Math.max(0, workflowStep - 1);
 
   return (
-    <div className="git-practice" aria-labelledby="git-practice-title">
+    <div className="git-practice git-slideshow" aria-labelledby="git-practice-title">
       <div className="git-practice__header">
         <div>
-          <span className="git-practice__eyebrow">TRY IT YOURSELF</span>
-          <h4 id="git-practice-title">Move a change through Git</h4>
-          <p>Choose each action in the order Git expects.</p>
+          <span className="git-practice__eyebrow">CLICK THROUGH THE WORKFLOW</span>
+          <h4 id="git-practice-title">See what Git changes</h4>
+          <p>Watch the highlighted areas as the file moves forward.</p>
         </div>
         <span className="git-practice__counter">
-          {Math.min(workflowStep, 4)}/4 done
+          {slideIndex + 1} / {gitFlowSlides.length}
         </span>
       </div>
 
-      <div
-        className="git-file-track"
-        style={{ "--active-stop": activeStop }}
-        aria-label={`index.html is at ${gitWorkflowStops[activeStop].label}`}
-      >
-        <div className="git-file-track__line" aria-hidden="true">
-          <span style={{ width: `${(activeStop / 3) * 100}%` }} />
+      <div className="git-slideshow__stage">
+        <button
+          type="button"
+          className="git-slideshow__arrow git-slideshow__arrow--previous"
+          aria-label="Show previous Git stage"
+          onClick={() => moveSlide(-1)}
+        >
+          <span aria-hidden="true">‹</span>
+        </button>
+
+        <div className="git-slideshow__image" key={currentSlide.image}>
+          <img src={currentSlide.image} alt={currentSlide.alt} />
+          {currentSlide.highlights.map((highlight) => (
+            <span
+              className={`git-slideshow__highlight ${currentSlide.highlightTone === "red" ? "is-red" : ""}`}
+              style={highlight.style}
+              key={highlight.label}
+              aria-hidden="true"
+            />
+          ))}
         </div>
-        {gitWorkflowStops.map((stop, index) => (
-          <div
-            className={`git-file-stop ${index < activeStop ? "is-complete" : ""} ${index === activeStop ? "is-active" : ""}`}
-            key={stop.label}
-          >
-            <span className="git-file-stop__dot" aria-hidden="true">
-              {index < activeStop ? "✓" : index + 1}
-            </span>
-            <strong>{stop.label}</strong>
-            <small>{stop.detail}</small>
-          </div>
-        ))}
-        <div className="git-file-token" aria-hidden="true">
-          <span>HTML</span>
-          index.html
+
+        <button
+          type="button"
+          className="git-slideshow__arrow git-slideshow__arrow--next"
+          aria-label="Show next Git stage"
+          onClick={() => moveSlide(1)}
+        >
+          <span aria-hidden="true">›</span>
+        </button>
+      </div>
+
+      <div className="git-slideshow__caption" aria-live="polite">
+        <span className="git-slideshow__step">{slideIndex + 1}</span>
+        <div>
+          <strong>{currentSlide.title}</strong>
+          <code>{currentSlide.command}</code>
+          <p>{currentSlide.explanation}</p>
         </div>
       </div>
 
-      <div className="git-practice__actions" aria-label="Git workflow actions">
-        {gitWorkflowSteps.map((step, index) => (
+      <div className="git-slideshow__tabs" aria-label="Choose a Git stage">
+        {gitFlowSlides.map((item, index) => (
           <button
             type="button"
-            className={index < workflowStep ? "is-done" : ""}
-            onClick={() => runWorkflowAction(index)}
-            key={step.command}
+            className={index === slideIndex ? "is-active" : ""}
+            aria-current={index === slideIndex ? "step" : undefined}
+            onClick={() => setSlideIndex(index)}
+            key={item.title}
           >
-            <span>{index < workflowStep ? "✓" : index + 1}</span>
-            <span>
-              <small>{step.label}</small>
-              <code>{step.command}</code>
-            </span>
+            <span>{index + 1}</span>
+            {item.title}
           </button>
         ))}
       </div>
+    </div>
+  );
+}
 
-      <div
-        className={`git-practice__feedback is-${messageTone}`}
-        role="status"
-        aria-live="polite"
-      >
-        <span aria-hidden="true">
-          {messageTone === "warning" ? "!" : messageTone === "complete" ? "✓" : "i"}
+const debuggingEvidence = {
+  build: {
+    label: "Build logs",
+    hint: "Did the project build successfully?",
+    lines: [
+      { time: "14:02:11", text: "Running build in Washington, D.C., USA (East)" },
+      { time: "14:02:12", text: "Running “npm run build”" },
+      { time: "14:02:18", text: "✓ 42 modules transformed." },
+      { time: "14:02:19", text: "Build Completed in /vercel/output [7s]" },
+    ],
+  },
+  runtime: {
+    label: "Runtime logs",
+    hint: "Which line explains the 500 response?",
+    lines: [
+      { time: "14:04:02", text: "GET / 200 in 46ms" },
+      { time: "14:04:08", text: "GET /api/checkout 500 in 183ms" },
+      {
+        time: "14:04:08",
+        text: "Error: STRIPE_SECRET_KEY is not defined",
+        important: true,
+      },
+      { time: "14:04:08", text: "at createCheckoutSession (/api/checkout.js:18:9)" },
+    ],
+  },
+  deployment: {
+    label: "Deployment information",
+    hint: "What changed in this release?",
+    details: [
+      ["Status", "Ready"],
+      ["Environment", "Production"],
+      ["Commit", "Add checkout flow (a31f9c2)"],
+      ["Deployed", "2 minutes ago"],
+      ["Previous", "Homepage refresh (7be21d0) · Healthy"],
+    ],
+  },
+};
+
+const debuggingDecisions = {
+  fix: {
+    label: "Fix and redeploy",
+    tone: "recommended",
+    title: "Best choice for this scenario",
+    result:
+      "Add STRIPE_SECRET_KEY to the Production environment, test the fix in Preview, then redeploy. The checkout route should return a successful response without removing the new feature.",
+  },
+  rollback: {
+    label: "Roll back",
+    tone: "safe",
+    title: "A safe emergency response",
+    result:
+      "Production returns to the previous healthy deployment, so visitors can use the site again. Checkout remains unavailable until you fix the missing variable and deploy a corrected release.",
+  },
+  ignore: {
+    label: "Ignore the error",
+    tone: "danger",
+    title: "The incident continues",
+    result:
+      "Visitors keep receiving a 500 error on checkout. The deployment may say “Ready,” but the runtime failure is still affecting production and needs action.",
+  },
+};
+
+function VercelDebuggingActivity() {
+  const [activeEvidence, setActiveEvidence] = useState("build");
+  const [selectedLine, setSelectedLine] = useState(null);
+  const [decision, setDecision] = useState(null);
+  const evidence = debuggingEvidence[activeEvidence];
+  const outcome = decision ? debuggingDecisions[decision] : null;
+  const foundError = selectedLine === "runtime-2";
+
+  const resetActivity = () => {
+    setActiveEvidence("build");
+    setSelectedLine(null);
+    setDecision(null);
+  };
+
+  return (
+    <div className="debug-scenario" aria-labelledby="debug-scenario-title">
+      <div className="debug-scenario__header">
+        <div>
+          <span className="debug-scenario__eyebrow">INCIDENT SIMULATION</span>
+          <h4 id="debug-scenario-title">The deployment completed—but visitors receive a 500 error</h4>
+        </div>
+        <span className="debug-scenario__incident">
+          <i aria-hidden="true" />
+          Production incident
         </span>
-        <p>{workflowMessage}</p>
-        {workflowStep === 4 && (
-          <button type="button" onClick={resetWorkflow}>Try again</button>
-        )}
       </div>
 
-      <details className="branch-practice" onToggle={(event) => {
-        if (!event.currentTarget.open) setBranchStep(0);
-      }}>
-        <summary>Bonus: create and merge a branch</summary>
-        <p>See a feature branch split from main, then join it again.</p>
-        <div className={`branch-visual branch-visual--step-${branchStep}`} aria-hidden="true">
-          <div className="branch-visual__main"><span>main</span></div>
-          <div className="branch-visual__feature"><span>feature</span></div>
-          <span className="branch-visual__node branch-visual__node--start" />
-          <span className="branch-visual__node branch-visual__node--work" />
-          <span className="branch-visual__node branch-visual__node--merge" />
+      <div className="debug-scenario__prompt">
+        <span>1</span>
+        <p><strong>Inspect the evidence.</strong> Open each source, then select the line that identifies the cause.</p>
+      </div>
+
+      <div className="debug-console">
+        <div className="debug-console__tabs" role="tablist" aria-label="Deployment evidence">
+          {Object.entries(debuggingEvidence).map(([id, item]) => (
+            <button
+              type="button"
+              role="tab"
+              aria-selected={activeEvidence === id}
+              className={activeEvidence === id ? "is-active" : ""}
+              onClick={() => setActiveEvidence(id)}
+              key={id}
+            >
+              <span aria-hidden="true">
+                {id === "build" ? "⌁" : id === "runtime" ? "›_" : "ⓘ"}
+              </span>
+              {item.label}
+            </button>
+          ))}
         </div>
-        {branchStep < 3 ? (
-          <button type="button" className="branch-practice__button" onClick={runBranchStep}>
-            {["git switch -c feature", "commit feature work", "git merge feature"][branchStep]}
-          </button>
-        ) : (
-          <div className="branch-practice__done">
-            <span aria-hidden="true">✓</span> Feature merged into main.
-            <button type="button" onClick={() => setBranchStep(0)}>Reset</button>
+
+        <div className="debug-console__panel" role="tabpanel">
+          <div className="debug-console__panel-heading">
+            <strong>{evidence.label}</strong>
+            <span>{evidence.hint}</span>
           </div>
-        )}
-      </details>
+
+          {evidence.lines && (
+            <div className="debug-console__lines">
+              {evidence.lines.map((line, index) => {
+                const lineId = `${activeEvidence}-${index}`;
+                const isSelected = selectedLine === lineId;
+                return (
+                  <button
+                    type="button"
+                    className={`${isSelected ? "is-selected" : ""} ${line.important && isSelected ? "is-important" : ""}`}
+                    aria-pressed={isSelected}
+                    onClick={() => {
+                      setSelectedLine(lineId);
+                      setDecision(null);
+                    }}
+                    key={`${line.time}-${line.text}`}
+                  >
+                    <time>{line.time}</time>
+                    <code>{line.text}</code>
+                    {line.important && isSelected && <span>CAUSE FOUND</span>}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          {evidence.details && (
+            <dl className="debug-console__details">
+              {evidence.details.map(([term, description]) => (
+                <div key={term}>
+                  <dt>{term}</dt>
+                  <dd>{description}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </div>
+      </div>
+
+      {selectedLine && !foundError && (
+        <p className="debug-scenario__feedback is-hint" role="status">
+          That line provides context, but it does not explain the failure. Check the runtime logs for the first specific error message.
+        </p>
+      )}
+
+      {foundError && (
+        <p className="debug-scenario__feedback is-correct" role="status">
+          <strong>Cause identified:</strong> the checkout function is missing its <code>STRIPE_SECRET_KEY</code> environment variable.
+        </p>
+      )}
+
+      <div className={`debug-decision ${foundError ? "is-ready" : ""}`}>
+        <div className="debug-scenario__prompt">
+          <span>2</span>
+          <p><strong>Choose a response.</strong> What should the team do next?</p>
+        </div>
+        <div className="debug-decision__choices">
+          {Object.entries(debuggingDecisions).map(([id, item]) => (
+            <button
+              type="button"
+              disabled={!foundError}
+              aria-pressed={decision === id}
+              className={decision === id ? "is-selected" : ""}
+              onClick={() => setDecision(id)}
+              key={id}
+            >
+              <span aria-hidden="true">{id === "fix" ? "↗" : id === "rollback" ? "↶" : "×"}</span>
+              {item.label}
+            </button>
+          ))}
+        </div>
+        {!foundError && <small>Select the important error line to unlock these decisions.</small>}
+      </div>
+
+      {outcome && (
+        <div className={`debug-outcome debug-outcome--${outcome.tone}`} role="status">
+          <div>
+            <span aria-hidden="true">
+              {decision === "fix" ? "✓" : decision === "rollback" ? "↶" : "!"}
+            </span>
+            <div>
+              <small>RESULT OF: {outcome.label.toUpperCase()}</small>
+              <strong>{outcome.title}</strong>
+            </div>
+          </div>
+          <p>{outcome.result}</p>
+          <button type="button" onClick={resetActivity}>Try again</button>
+        </div>
+      )}
     </div>
   );
 }
@@ -965,6 +1289,8 @@ export default function WebDevToolchain101() {
                   <li><span>4</span><p>Merging into the production branch creates a <strong>Production Deployment</strong>.</p></li>
                   <li><span>5</span><p>If several commits arrive while Vercel is building, it finishes the current build and then prioritizes the newest queued commit.</p></li>
                 </ol>
+
+                <DeploymentFlowLab />
               </section>
 
               <section className="lesson-section" aria-labelledby="vercel-environments">
@@ -1149,11 +1475,13 @@ export default function WebDevToolchain101() {
                     <li>Save the Request ID when sharing the problem with someone else.</li>
                   </ol>
                 </div>
+
+                <VercelDebuggingActivity />
               </section>
 
               <section className="lesson-section" aria-labelledby="vercel-rollback-steps">
                 <div className="section-heading">
-                  <span>03</span>
+                  <span>04</span>
                   <div>
                     <h3 id="vercel-rollback-steps">Roll Back and Recover</h3>
                     <p>Restore service first, then investigate and release a tested fix.</p>
