@@ -1,5 +1,10 @@
 import { useState, useEffect } from "react";
 import "./App.css";
+import GitGithubLessons from "./GitGithubLessons";
+import {
+  gitLessonPages,
+  gitLessonTitles,
+} from "./gitLessonsData";
 
 function PageNavigation({ backTitle, onBack, nextTitle, onNext }) {
   return (
@@ -804,8 +809,310 @@ function VercelDebuggingActivity() {
   );
 }
 
+const planBlocks = [
+  {
+    id: "goal",
+    label: "Goal",
+    icon: "◎",
+    content: "Build a responsive study-timer page for students.",
+    hint: "What outcome should the agent deliver?",
+  },
+  {
+    id: "context",
+    label: "Context",
+    icon: "◇",
+    content: "The project uses React and the existing purple course design system.",
+    hint: "What should the agent know before it starts?",
+  },
+  {
+    id: "steps",
+    label: "Steps",
+    icon: "☷",
+    content: "1. Inspect existing components\n2. Build the timer\n3. Add responsive styles\n4. Test the interactions",
+    hint: "What sequence will the agent follow?",
+  },
+  {
+    id: "files",
+    label: "Files",
+    icon: "▤",
+    content: "Edit: src/App.jsx and src/App.css\nDo not change: package.json",
+    hint: "What is in scope—and what is protected?",
+  },
+  {
+    id: "checks",
+    label: "Checks",
+    icon: "✓",
+    content: "Run npm run build. Confirm start, pause, reset, and mobile layout.",
+    hint: "How will we know the task is complete?",
+  },
+];
+
+function PlanModeBuilder() {
+  const [selected, setSelected] = useState([]);
+  const [checked, setChecked] = useState(false);
+
+  const toggleBlock = (id) => {
+    setChecked(false);
+    setSelected((current) =>
+      current.includes(id)
+        ? current.filter((item) => item !== id)
+        : planBlocks.filter((item) => [...current, id].includes(item.id)).map((item) => item.id),
+    );
+  };
+
+  const complete = selected.length === planBlocks.length;
+
+  return (
+    <div className="plan-builder">
+      <div className="plan-builder__heading">
+        <div>
+          <span>HANDS-ON EXERCISE</span>
+          <h4>Build a plan.md</h4>
+        </div>
+        <p>Choose each planning block. Watch the document take shape.</p>
+      </div>
+
+      <div className="plan-builder__workspace">
+        <div className="plan-builder__controls">
+          {planBlocks.map((block, index) => (
+            <button
+              type="button"
+              className={selected.includes(block.id) ? "is-selected" : ""}
+              aria-pressed={selected.includes(block.id)}
+              onClick={() => toggleBlock(block.id)}
+              key={block.id}
+            >
+              <span className="plan-builder__number">{selected.includes(block.id) ? "✓" : index + 1}</span>
+              <span className="plan-builder__button-copy">
+                <strong>{block.label}</strong>
+                <small>{block.hint}</small>
+              </span>
+              <span aria-hidden="true">{block.icon}</span>
+            </button>
+          ))}
+          <button
+            type="button"
+            className="plan-builder__check"
+            disabled={!complete}
+            onClick={() => setChecked(true)}
+          >
+            {checked ? "✓ Plan ready to use" : "Check my plan"}
+          </button>
+        </div>
+
+        <div className="plan-document">
+          <div className="plan-document__bar">
+            <span><i /> plan.md</span>
+            <small>{selected.length} / {planBlocks.length} PARTS</small>
+          </div>
+          <div className="plan-document__body" aria-live="polite">
+            <h5># Implementation plan</h5>
+            {!selected.length && <p className="plan-document__empty">Select a block to begin your plan.</p>}
+            {planBlocks.filter((block) => selected.includes(block.id)).map((block) => (
+              <section key={block.id}>
+                <strong>## {block.label}</strong>
+                <pre>{block.content}</pre>
+              </section>
+            ))}
+          </div>
+          <div className={`plan-document__status ${checked ? "is-complete" : ""}`} role="status">
+            <span>{checked ? "✓" : "○"}</span>
+            {checked
+              ? "Clear, scoped, and testable"
+              : complete
+                ? "All parts added—check your plan"
+                : `${planBlocks.length - selected.length} part${planBlocks.length - selected.length === 1 ? "" : "s"} still needed`}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+const debugSteps = [
+  {
+    id: "spot",
+    label: "Read the error",
+    short: "Error",
+    instruction: "Find the exact message in the console.",
+  },
+  {
+    id: "understand",
+    label: "Understand it",
+    short: "Meaning",
+    instruction: "Translate the technical message into plain language.",
+  },
+  {
+    id: "ask",
+    label: "Ask AI",
+    short: "Explain",
+    instruction: "Give the AI the error, relevant code, and what you expected.",
+  },
+  {
+    id: "fix",
+    label: "Apply a fix",
+    short: "Fix",
+    instruction: "Make the smallest change that addresses the cause.",
+  },
+  {
+    id: "test",
+    label: "Test again",
+    short: "Test",
+    instruction: "Repeat the action and check for regressions.",
+  },
+];
+
+function AgenticDebugLab() {
+  const [step, setStep] = useState(0);
+  const [complete, setComplete] = useState(false);
+
+  const actions = [
+    {
+      title: "Spot the useful clue",
+      copy: "The preview is blank. The console points to line 12: “ReferenceError: tasks is not defined”.",
+      action: "Highlight the error",
+    },
+    {
+      title: "Say what it means",
+      copy: "The page is trying to read a variable named tasks, but that variable has not been created in this scope.",
+      action: "I understand",
+    },
+    {
+      title: "Give AI enough context",
+      copy: "“My React page is blank. Console: ReferenceError: tasks is not defined at TaskList.jsx:12. Here is the component. Explain the cause and suggest the smallest fix.”",
+      action: "Send clear prompt",
+    },
+    {
+      title: "Review the suggested change",
+      copy: "Define the missing variable before using it: const tasks = [{ id: 1, title: \"Review Git notes\" }, { id: 2, title: \"Finish prompt exercise\" }]; Then tasks.map(...) has a real array to read.",
+      action: "Apply reviewed fix",
+    },
+    {
+      title: "Run the same check",
+      copy: "Reload the preview, add a task, mark it complete, and confirm the console stays clear.",
+      action: "Run test",
+    },
+  ];
+
+  const advance = () => {
+    if (step === debugSteps.length - 1) setComplete(true);
+    else setStep((current) => current + 1);
+  };
+
+  const reset = () => {
+    setStep(0);
+    setComplete(false);
+  };
+
+  return (
+    <div className="agent-debug-lab">
+      <div className="agent-debug-lab__heading">
+        <div>
+          <span>GUIDED DEBUGGING LAB</span>
+          <h4>Rescue the broken task list</h4>
+        </div>
+        <p>Work through one evidence-based step at a time.</p>
+      </div>
+
+      <ol className="debug-workflow" aria-label="Debugging workflow">
+        {debugSteps.map((item, index) => (
+          <li className={`${index === step && !complete ? "is-active" : ""} ${index < step || complete ? "is-done" : ""}`} key={item.id}>
+            <span>{index < step || complete ? "✓" : index + 1}</span>
+            <strong>{item.short}</strong>
+          </li>
+        ))}
+      </ol>
+
+      <div className="debug-mockup">
+        <div className="debug-mockup__browser">
+          <div className="debug-mockup__bar"><i /><i /><i /><span>localhost:5173/tasks</span></div>
+          <div className="debug-mockup__page">
+            <div>
+              <small>TODAY</small>
+              <h5>My study tasks</h5>
+            </div>
+            <div className={`debug-mockup__broken ${complete ? "is-fixed" : ""}`}>
+              {complete ? (
+                <>
+                  <label><input type="checkbox" /> Review Git notes</label>
+                  <label><input type="checkbox" /> Finish prompt exercise</label>
+                </>
+              ) : (
+                <p>Something went wrong while loading tasks.</p>
+              )}
+            </div>
+          </div>
+          <div className={`debug-mockup__console ${step === 0 ? "is-highlighted" : ""}`}>
+            <span>Console</span>
+            <code>{complete ? "✓ Page rendered with 2 tasks. No errors." : "ReferenceError: tasks is not defined  TaskList.jsx:12"}</code>
+          </div>
+        </div>
+
+        <aside className="debug-coach" aria-live="polite">
+          {complete ? (
+            <>
+              <span className="debug-coach__step">LAB COMPLETE</span>
+              <h5>Bug fixed and verified</h5>
+              <p>You used the error as evidence, reviewed the AI suggestion, and tested the behaviour again.</p>
+              <button type="button" onClick={reset}>Try again</button>
+            </>
+          ) : (
+            <>
+              <span className="debug-coach__step">STEP {step + 1} OF {debugSteps.length}</span>
+              <h5>{actions[step].title}</h5>
+              <p>{debugSteps[step].instruction}</p>
+              <blockquote>{actions[step].copy}</blockquote>
+              <button type="button" onClick={advance}>{actions[step].action} →</button>
+            </>
+          )}
+        </aside>
+      </div>
+    </div>
+  );
+}
+
+function HmrDemo() {
+  const [draft, setDraft] = useState("Hello, Vite!");
+  const [preview, setPreview] = useState("Hello, Vite!");
+  const [updated, setUpdated] = useState(false);
+
+  const saveChange = () => {
+    setPreview(draft || " ");
+    setUpdated(true);
+    window.setTimeout(() => setUpdated(false), 900);
+  };
+
+  return (
+    <div className="hmr-demo">
+      <div className="hmr-demo__heading">
+        <div><span>TRY HMR</span><h4>Change, save, update</h4></div>
+        <p>Edit the heading, then save the file.</p>
+      </div>
+      <div className="hmr-demo__workspace">
+        <div className="hmr-editor">
+          <div className="hmr-window-bar"><span><i /><i /><i /></span><strong>App.jsx</strong></div>
+          <label htmlFor="hmr-heading">Heading text</label>
+          <div className="hmr-code-line"><span>1</span><code>&lt;h1&gt;</code><input id="hmr-heading" value={draft} onChange={(event) => setDraft(event.target.value)} /><code>&lt;/h1&gt;</code></div>
+          <button type="button" onClick={saveChange}>Save App.jsx</button>
+        </div>
+        <div className={`hmr-browser ${updated ? "is-updated" : ""}`}>
+          <div className="hmr-window-bar"><span><i /><i /><i /></span><strong>localhost:5173</strong></div>
+          <div className="hmr-browser__page">
+            <small>LIVE PREVIEW</small>
+            <h4>{preview}</h4>
+            <p>The rest of this page stays in place.</p>
+          </div>
+          <div className="hmr-browser__status" role="status">
+            {updated ? "✓ Module updated instantly" : "Waiting for a saved change"}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function WebDevToolchain101() {
-  const [slide, setSlide] = useState("slide1");
+  const [slide, setSlide] = useState(() => window.location.hash.slice(1) || "slide1");
   const [menuOpen, setMenuOpen] = useState(false);
   const [expandedSection, setExpandedSection] = useState(null);
   const [answers, setAnswers] = useState(() => Array(16).fill(null));
@@ -814,81 +1121,76 @@ export default function WebDevToolchain101() {
   const [quizDirection, setQuizDirection] = useState("next");
   const [activeVscodeTool, setActiveVscodeTool] = useState(null);
   const [exploredVscodeTools, setExploredVscodeTools] = useState(() => new Set());
+  const [raceDraft, setRaceDraft] = useState({
+    role: "",
+    action: "",
+    context: "",
+    expectation: "",
+  });
+
+  useEffect(() => {
+    const followBrowserNavigation = () => {
+      setSlide(window.location.hash.slice(1) || "slide1");
+      window.scrollTo({ top: 0 });
+    };
+
+    window.addEventListener("hashchange", followBrowserNavigation);
+    return () => window.removeEventListener("hashchange", followBrowserNavigation);
+  }, []);
 
   const menuSections = [
+    {
+      title: "Agentic Coding",
+      slide: "slideAgentic",
+      pages: [
+        { label: "Overview", target: "agentic-overview" },
+        { label: "Coding Agents & AI Builders", slide: "slideAgents", target: "agents-overview" },
+        { label: "Prompt Engineering", slide: "slidePrompts", target: "prompts-overview" },
+        { label: "Plan Mode", slide: "slidePlanMode", target: "plan-mode-overview" },
+        { label: "Debugging with AI", slide: "slideAgentDebug", target: "agent-debugging-overview" },
+      ],
+    },
     {
       title: "VS Code Basics",
       slide: "slideVSCode",
       pages: [
-        { label: "Overview", target: "vscode-overview" },
-        { label: "Why VS Code?", target: "vscode-why" },
-        { label: "Key concepts", target: "vscode-concepts" },
+        { label: "VS Code Basics", target: "vscode-overview" },
       ],
     },
     {
-      title: "Git Basics",
-      slide: "slide2",
-      pages: [
-        { label: "What is Git?", target: "git-overview" },
-        { label: "Why Git matters", target: "git-why" },
-        { label: "Key terms", target: "git-terms" },
-        { label: "Common commands", target: "git-commands" },
-      ],
-    },
-    {
-      title: "GitHub",
-      slide: "slide3",
-      pages: [
-        { label: "What is GitHub?", target: "github-overview" },
-        { label: "Why GitHub is useful", target: "github-why" },
-        { label: "Key terms", target: "github-terms" },
-        { label: "Common commands", target: "github-commands" },
-      ],
-    },
-    {
-      title: "GitHub Actions",
-      slide: "slide4",
-      pages: [
-        { label: "Actions overview", target: "actions-overview" },
-        { label: "Why automation matters", target: "actions-why" },
-        { label: "Key terms", target: "actions-terms" },
-        { label: "Example workflow", target: "actions-example" },
-      ],
+      title: "Git & GitHub",
+      slide: "gitOverview",
+      pages: gitLessonPages,
     },
     {
       title: "Vite",
       slide: "slide5",
       pages: [
-        { label: "What is Vite?", target: "vite-overview" },
-        { label: "Why Vite is fast", target: "vite-why" },
-        { label: "Key terms", target: "vite-terms" },
-        { label: "Create a Vite project", target: "vite-example" },
+        { label: "Overview", target: "vite-overview" },
+        { label: "Live Preview & HMR", slide: "slideViteDev", target: "vite-dev-server" },
+        { label: "npm & Dependencies", slide: "slideViteNpm", target: "vite-npm" },
+        { label: "Assets & Modules", slide: "slideViteAssets", target: "vite-assets" },
+        { label: "Build & Deployment", slide: "slideViteBuild", target: "vite-build" },
+        { label: "Why Vite?", slide: "slideViteWhy", target: "vite-why" },
       ],
     },
     {
       title: "Vercel",
       slide: "slide9",
       pages: [
-        { label: "Getting started", target: "vercel-overview" },
-        { label: "Connect a repository", target: "vercel-connect" },
-        { label: "First deployment", target: "vercel-first-deployment" },
-        { label: "Git deployments", slide: "slideVercelGit", target: "vercel-git-overview" },
-        { label: "Every push", slide: "slideVercelGit", target: "vercel-every-push" },
-        { label: "Preview vs production", slide: "slideVercelGit", target: "vercel-environments" },
-        { label: "Deployment URLs", slide: "slideVercelGit", target: "vercel-urls" },
-        { label: "Team workflow", slide: "slideVercelGit", target: "vercel-team-flow" },
+        { label: "Overview", target: "vercel-overview" },
+        { label: "Connect GitHub to Vercel", slide: "slideVercelSetup", target: "vercel-setup" },
+        { label: "From Git Commit to Deployment", slide: "slideVercelGit", target: "vercel-git-overview" },
         { label: "Debugging on Vercel", slide: "slideVercelDebug", target: "vercel-debugging" },
-        { label: "What is a rollback?", slide: "slideVercelDebug", target: "vercel-rollback" },
-        { label: "Finding errors in logs", slide: "slideVercelDebug", target: "vercel-logs" },
       ],
     },
     {
       title: "Knowledge check",
       slide: "slide6",
       pages: [
-        { label: "Quiz introduction", target: "quiz-intro" },
-        { label: "Take the quiz", slide: "slide7", target: "quiz-questions" },
-        { label: "Course completion", slide: "slide8", target: "course-complete" },
+        { label: "Ready for a Quiz?", target: "quiz-intro" },
+        { label: "Quiz — Multiple Choice", slide: "slide7", target: "quiz-questions" },
+        { label: "Great job!", slide: "slide8", target: "course-complete" },
       ],
     },
   ];
@@ -928,6 +1230,7 @@ export default function WebDevToolchain101() {
 
   const navigateFromMenu = (nextSlide, target) => {
     setSlide(nextSlide);
+    window.location.hash = nextSlide;
     setMenuOpen(false);
 
     window.setTimeout(() => {
@@ -940,6 +1243,7 @@ export default function WebDevToolchain101() {
 
   const goToSlide = (nextSlide) => {
     setSlide(nextSlide);
+    window.location.hash = nextSlide;
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -1001,13 +1305,22 @@ export default function WebDevToolchain101() {
   const headerTitles = {
     slide1: "Web Dev Toolchain 101",
     slideVSCode: "VS Code",
-    slide2: "Git",
-    slide3: "GitHub",
-    slide4: "GitHub Actions",
+    ...gitLessonTitles,
     slide5: "Vite",
+    slideViteDev: "Vite · Live Preview & HMR",
+    slideViteNpm: "Vite · npm & Dependencies",
+    slideViteAssets: "Vite · Assets & Modules",
+    slideViteBuild: "Vite · Build & Deployment",
+    slideViteWhy: "Vite · Why Vite?",
     slide9: "Vercel",
+    slideVercelSetup: "Vercel · Connect GitHub",
     slideVercelGit: "Vercel",
     slideVercelDebug: "Vercel Debugging",
+    slideAgentic: "Agentic Coding",
+    slideAgents: "Coding Agents & AI Builders",
+    slidePrompts: "Prompt Engineering",
+    slidePlanMode: "Plan Mode",
+    slideAgentDebug: "Debugging with AI",
     slide6: "Knowledge Check",
     slide7: "Knowledge Check",
     slide8: "Course Complete",
@@ -1114,7 +1427,7 @@ export default function WebDevToolchain101() {
           p{margin-bottom:14px;line-height:1.6}
           ul li{margin-bottom:8px}
           header{background:var(--primary);color:#fff;padding:18px;text-align:center;font-size:24px}
-          .container {width: 100%;max-width: none;margin: 0;padding: 20px;}
+          .container {box-sizing:border-box;width: 100%;max-width: none;margin: 0;padding: 20px;}
           .card{background:#fff;padding:24px;border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,0.06);margin-bottom:18px}
           img{width:100%;border-radius:8px;margin:12px 0}
           pre{background:#f0f0f0;padding:12px;border-radius:8px;overflow:auto}
@@ -1142,57 +1455,112 @@ export default function WebDevToolchain101() {
 
               <div className="module-grid">
                 <button type="button" className="module-card" onClick={() => goToSlide('slideVSCode')}>
-                  <span className="module-card__number">01</span>
+                  <span className="module-card__number">02</span>
                   <span className="module-card__icon" aria-hidden="true">💻</span>
                   <h3>VS Code Basics</h3>
                   <p>Learn your way around the editor and its essential tools.</p>
                   <span className="module-card__link">Start module →</span>
                 </button>
-                <button type="button" className="module-card" onClick={() => goToSlide('slide2')}>
-                  <span className="module-card__number">02</span>
-                  <span className="module-card__icon" aria-hidden="true">🧩</span>
-                  <h3>Git Basics</h3>
-                  <p>Track changes, save snapshots, and work safely with branches.</p>
-                  <span className="module-card__link">Start module →</span>
-                </button>
-                <button type="button" className="module-card" onClick={() => goToSlide('slide3')}>
+                <button type="button" className="module-card" onClick={() => goToSlide('gitOverview')}>
                   <span className="module-card__number">03</span>
-                  <span className="module-card__icon" aria-hidden="true">🐙</span>
-                  <h3>GitHub</h3>
-                  <p>Store projects online and collaborate through pull requests.</p>
-                  <span className="module-card__link">Start module →</span>
-                </button>
-                <button type="button" className="module-card" onClick={() => goToSlide('slide4')}>
-                  <span className="module-card__number">04</span>
-                  <span className="module-card__icon" aria-hidden="true">⚙️</span>
-                  <h3>GitHub Actions</h3>
-                  <p>Automate testing, building, and other repeated tasks.</p>
+                  <span className="module-card__icon" aria-hidden="true">⑂</span>
+                  <h3>Git &amp; GitHub</h3>
+                  <p>Learn how changes move through Git, navigate repositories, publish work, use branches, and recover mistakes.</p>
                   <span className="module-card__link">Start module →</span>
                 </button>
                 <button type="button" className="module-card" onClick={() => goToSlide('slide5')}>
-                  <span className="module-card__number">05</span>
+                  <span className="module-card__number">04</span>
                   <span className="module-card__icon" aria-hidden="true">⚡</span>
                   <h3>Vite</h3>
                   <p>Build frontend projects with a fast local development server.</p>
                   <span className="module-card__link">Start module →</span>
                 </button>
                 <button type="button" className="module-card" onClick={() => goToSlide('slide9')}>
-                  <span className="module-card__number">06</span>
+                  <span className="module-card__number">05</span>
                   <span className="module-card__icon module-card__icon--vercel" aria-hidden="true">▲</span>
                   <h3>Vercel</h3>
                   <p>Turn Git pushes into previews and production deployments.</p>
+                  <span className="module-card__link">Start module →</span>
+                </button>
+                <button type="button" className="module-card module-card--agentic" onClick={() => goToSlide('slideAgentic')}>
+                  <span className="module-card__number">01</span>
+                  <span className="module-card__icon" aria-hidden="true">✦</span>
+                  <h3>Agentic Coding</h3>
+                  <p>Direct AI coding teammates with strong prompts, plans, tests, and review habits.</p>
                   <span className="module-card__link">Start module →</span>
                 </button>
               </div>
             </section>
           )}
 
-          {/* Slide 9 */}
+          {/* Vercel overview */}
           {slide === "slide9" && (
+            <section className="content-page lesson-page vercel-overview-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">FROM CODE TO A PUBLIC WEBSITE</span>
+                <h2 id="vercel-overview">▲ Vercel overview</h2>
+                <p>Vercel is a cloud platform for building, deploying, and hosting web applications. It connects your source code to the infrastructure needed to put a website online, so you can focus on the project instead of configuring servers.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="vercel-role">
+                <div className="section-heading">
+                  <span>01</span>
+                  <div><h3 id="vercel-role">What does Vercel do?</h3><p>Vercel takes a project, builds it, and creates a deployment that people can visit.</p></div>
+                </div>
+                <div className="vercel-overview-flow" aria-label="Vercel deployment overview">
+                  <article><span>1</span><strong>Source code</strong><p>Your project lives locally or in a Git repository.</p></article>
+                  <b aria-hidden="true">→</b>
+                  <article><span>2</span><strong>Build</strong><p>Vercel runs the project’s production build.</p></article>
+                  <b aria-hidden="true">→</b>
+                  <article><span>3</span><strong>Deploy</strong><p>The successful build becomes a hosted deployment.</p></article>
+                  <b aria-hidden="true">→</b>
+                  <article><span>4</span><strong>Visit</strong><p>Vercel gives the deployment a shareable URL.</p></article>
+                </div>
+                <p className="lesson-callout"><strong>Vite builds your project; Vercel hosts the result.</strong> Vite prepares production files, while Vercel runs the cloud deployment and makes the website available online.</p>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vercel-core-features">
+                <div className="section-heading">
+                  <span>02</span>
+                  <div><h3 id="vercel-core-features">Core features</h3><p>The main tools students will use when deploying a frontend project.</p></div>
+                </div>
+                <div className="vercel-core-grid">
+                  <article><span>↗</span><h4>Git deployments</h4><p>Connect GitHub, GitLab, Bitbucket, or Azure DevOps and create deployments from repository changes.</p></article>
+                  <article><span>◇</span><h4>Preview deployments</h4><p>Branches and pull requests can receive their own URLs for testing before changes go live.</p></article>
+                  <article><span>●</span><h4>Production deployment</h4><p>The approved production branch powers the public version that visitors should see.</p></article>
+                  <article><span>⚙</span><h4>Automatic builds</h4><p>Vercel detects common frameworks and runs the configured build command for each deployment.</p></article>
+                  <article><span>⌁</span><h4>Domains &amp; HTTPS</h4><p>Use a generated <code>.vercel.app</code> address or connect a custom domain with secure HTTPS.</p></article>
+                  <article><span>⌕</span><h4>Logs &amp; recovery</h4><p>Inspect build and runtime logs, redeploy a commit, or roll production back to a working deployment.</p></article>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vercel-environments-intro">
+                <div className="section-heading">
+                  <span>03</span>
+                  <div><h3 id="vercel-environments-intro">Three places in the workflow</h3><p>Knowing where the project is running helps you choose the right URL and debugging tools.</p></div>
+                </div>
+                <div className="vercel-environment-strip">
+                  <article><span>LOCAL</span><h4>Your computer</h4><p>Develop and test with a local address such as <code>localhost:5173</code>.</p></article>
+                  <article><span>PREVIEW</span><h4>Review online</h4><p>Share a branch or pull-request deployment without changing the live website.</p></article>
+                  <article><span>PRODUCTION</span><h4>The live website</h4><p>Publish approved code on the domain intended for visitors.</p></article>
+                </div>
+              </section>
+
+              <PageNavigation
+                backTitle="Why Vite?"
+                onBack={() => goToSlide("slideViteWhy")}
+                nextTitle="Connect GitHub to Vercel"
+                onNext={() => goToSlide("slideVercelSetup")}
+              />
+            </section>
+          )}
+
+          {/* Vercel setup */}
+          {slide === "slideVercelSetup" && (
             <section className="content-page lesson-page">
               <div className="lesson-intro">
                 <span className="lesson-kicker">GETTING STARTED</span>
-                <h2 id="vercel-overview">▲ Connect GitHub to Vercel</h2>
+                <h2 id="vercel-setup">▲ Connect GitHub to Vercel</h2>
                 <p>Connect a GitHub repository once and Vercel can build and host the website for you.</p>
               </div>
 
@@ -1235,8 +1603,8 @@ export default function WebDevToolchain101() {
               </section>
 
               <PageNavigation
-                backTitle="Vite"
-                onBack={() => goToSlide("slide5")}
+                backTitle="Vercel overview"
+                onBack={() => goToSlide("slide9")}
                 nextTitle="Vercel Git deployments"
                 onNext={() => goToSlide("slideVercelGit")}
               />
@@ -1384,8 +1752,8 @@ export default function WebDevToolchain101() {
               </section>
 
               <PageNavigation
-                backTitle="Deploying with Vercel"
-                onBack={() => goToSlide("slide9")}
+                backTitle="Connect GitHub to Vercel"
+                onBack={() => goToSlide("slideVercelSetup")}
                 nextTitle="Debugging on Vercel"
                 onNext={() => goToSlide("slideVercelDebug")}
               />
@@ -1662,13 +2030,22 @@ vercel logs --environment production --status-code 5xx --since 5m`}</pre>
               </section>
 
               <PageNavigation
-                backTitle="Home"
-                onBack={() => goToSlide("slide1")}
-                nextTitle="What is Git?"
-                onNext={() => goToSlide("slide2")}
+                backTitle="Debugging with AI"
+                onBack={() => goToSlide("slideAgentDebug")}
+                nextTitle="Git & GitHub overview"
+                onNext={() => goToSlide("gitOverview")}
               />
 
             </section>
+          )}
+
+          {gitLessonPages.some((page) => page.slide === slide) && (
+            <GitGithubLessons
+              slide={slide}
+              onNavigate={goToSlide}
+              workflowActivity={<GitWorkflowActivity />}
+              actionsBuilder={<ActionsWorkflowBuilder />}
+            />
           )}
 
           {slide === "slide2" && (
@@ -1923,39 +2300,38 @@ vercel logs --environment production --status-code 5xx --since 5m`}</pre>
           {slide === "slide5" && (
             <section className="content-page lesson-page">
               <div className="lesson-intro">
-                <span className="lesson-kicker">FAST FRONTEND DEVELOPMENT</span>
-                <h2 id="vite-overview">⚡ What is Vite?</h2>
-                <p>Vite is a modern frontend build tool designed to make development extremely fast. It provides a lightning‑quick dev server, instant updates when you save your files, and optimized production builds.</p>
+                <span className="lesson-kicker">VITE FUNDAMENTALS</span>
+                <h2 id="vite-overview">⚡ Vite overview</h2>
+                <p>Vite is a tool that supports your frontend project from the first edit to deployment. It gives you a live preview while you work, understands modern JavaScript modules and assets, and prepares an optimized website when you are ready to publish.</p>
               </div>
 
               <div className="lesson-summary">
-                <h3 id="vite-why">Why Vite Is Game‑Changing</h3>
-                <p>Traditional bundlers rebuild your entire project every time you make a change, which slows things down. Vite uses a new approach powered by <strong>ES Modules</strong>, which lets the browser handle module loading natively—making updates nearly instant.</p>
+                <h3>One tool, two stages</h3>
+                <p>During <strong>development</strong>, Vite runs a fast local preview and updates it as files change. For <strong>deployment</strong>, Vite creates a production-ready version of the project inside the <code>dist</code> folder.</p>
               </div>
 
-              <section className="lesson-section" aria-labelledby="vite-terms">
+              <section className="lesson-section" aria-labelledby="vite-journey">
                 <div className="section-heading">
                   <span>01</span>
                   <div>
-                    <h3 id="vite-terms">Key Terms</h3>
-                    <p>The concepts behind Vite’s fast development experience.</p>
+                    <h3 id="vite-journey">The Vite journey</h3>
+                    <p>These four stages will guide the rest of this module.</p>
                   </div>
                 </div>
                 <dl className="lesson-terms">
-                  <div><dt>ES Modules <span>(ESM)</span></dt><dd>A system that lets JavaScript import and export code cleanly between files.</dd></div>
-                  <div><dt>Bundling</dt><dd>Combining your files and code into an optimized package for the browser.</dd></div>
-                  <div><dt>Libraries</dt><dd>Pre-written code packages that make building features easier, like React or Vue.</dd></div>
-                  <div><dt>Dependencies</dt><dd>Extra modules your Vite project needs to work properly.</dd></div>
-                  <div><dt>Hot Module Reloading <span>(HMR)</span></dt><dd>A feature that updates your website instantly when you change code—without refreshing the page.</dd></div>
+                  <div><dt>1 · Create</dt><dd>Start with a ready-made project structure instead of configuring every tool yourself.</dd></div>
+                  <div><dt>2 · Develop</dt><dd>Run a live preview on your computer and see saved changes quickly.</dd></div>
+                  <div><dt>3 · Organize</dt><dd>Use modules, dependencies, and asset folders to keep the project manageable.</dd></div>
+                  <div><dt>4 · Build</dt><dd>Create smaller production files that a hosting platform can deploy.</dd></div>
                 </dl>
               </section>
 
-              <section className="lesson-section" aria-labelledby="vite-example">
+              <section className="lesson-section" aria-labelledby="vite-starter">
                 <div className="section-heading">
                   <span>02</span>
                   <div>
-                    <h3 id="vite-example">Create a Vite Project</h3>
-                    <p>Four commands take you from a blank folder to a live development server.</p>
+                    <h3 id="vite-starter">Start a Vite project</h3>
+                    <p>These commands create the project, download what it needs, and open the development workflow.</p>
                   </div>
                 </div>
                 <div className="git-command-layout">
@@ -1983,12 +2359,538 @@ vercel logs --environment production --status-code 5xx --since 5m`}</pre>
               </section>
 
               <PageNavigation
-                backTitle="GitHub Actions"
-                onBack={() => goToSlide("slide4")}
-                nextTitle="Deploying with Vercel"
-                onNext={() => goToSlide("slide9")}
+                backTitle="Git command reference"
+                onBack={() => goToSlide("gitReference")}
+                nextTitle="Live Preview & HMR"
+                onNext={() => goToSlide("slideViteDev")}
               />
 
+            </section>
+          )}
+
+          {/* Vite: live development */}
+          {slide === "slideViteDev" && (
+            <section className="content-page lesson-page vite-learning-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">SEE CHANGES AS YOU WORK</span>
+                <h2 id="vite-dev-server">Live Preview &amp; HMR</h2>
+                <p>Vite gives you a live preview of your project that runs on your own computer. Save a file and the browser can show the change almost immediately.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="vite-dev-command">
+                <div className="section-heading"><span>01</span><div><h3 id="vite-dev-command">Start the live preview</h3><p>Run one command from inside the project folder.</p></div></div>
+                <div className="vite-command-focus">
+                  <div><span>TERMINAL</span><code>npm run dev</code></div>
+                  <ul>
+                    <li>Starts a local web server</li>
+                    <li>Lets you preview the website in a browser</li>
+                    <li>Watches your project files for saved changes</li>
+                  </ul>
+                </div>
+                <p className="lesson-callout"><strong>Local does not mean public.</strong> This preview is for development on your computer. Other people cannot visit it like a deployed website.</p>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vite-localhost">
+                <div className="section-heading"><span>02</span><div><h3 id="vite-localhost">What does localhost:5173 mean?</h3><p>The preview address contains two useful pieces of information.</p></div></div>
+                <div className="localhost-explainer">
+                  <div className="localhost-address"><span>http://</span><strong>localhost</strong><b>:</b><strong>5173</strong></div>
+                  <dl>
+                    <div><dt>localhost</dt><dd>Your own computer. The site is running locally rather than on the public internet.</dd></div>
+                    <div><dt>5173</dt><dd>The default port Vite uses for its development server—like a numbered doorway into the preview.</dd></div>
+                  </dl>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vite-hmr">
+                <div className="section-heading"><span>03</span><div><h3 id="vite-hmr">Hot Module Replacement (HMR)</h3><p>Instead of refreshing the entire webpage, Vite updates the part that changed.</p></div></div>
+                <p>HMR makes development feel immediate: change text, save the file, and see the browser update. Other parts of the page—and often its current state—can stay in place.</p>
+                <HmrDemo />
+              </section>
+
+              <PageNavigation backTitle="Vite overview" onBack={() => goToSlide("slide5")} nextTitle="npm & Dependencies" onNext={() => goToSlide("slideViteNpm")} />
+            </section>
+          )}
+
+          {/* Vite: npm and dependencies */}
+          {slide === "slideViteNpm" && (
+            <section className="content-page lesson-page vite-learning-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">COMMANDS YOUR PROJECT UNDERSTANDS</span>
+                <h2 id="vite-npm">npm Scripts &amp; Dependencies</h2>
+                <p>Vite projects use npm scripts as short, consistent commands. npm also downloads the libraries that the project depends on.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="vite-scripts">
+                <div className="section-heading"><span>01</span><div><h3 id="vite-scripts">Three scripts to remember</h3><p>Each command matches a different stage of your workflow.</p></div></div>
+                <div className="vite-script-table">
+                  <div className="vite-script-table__head"><strong>Command</strong><strong>Purpose</strong></div>
+                  <div><code>npm run dev</code><span>Develop your website using the live local preview.</span></div>
+                  <div><code>npm run build</code><span>Prepare an optimized version for deployment.</span></div>
+                  <div><code>npm run preview</code><span>Test the production build locally before publishing it.</span></div>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vite-package-json">
+                <div className="section-heading"><span>02</span><div><h3 id="vite-package-json">package.json is the project’s checklist</h3><p>It records the scripts you can run and the packages the project needs.</p></div></div>
+                <div className="vite-package-layout">
+                  <pre>{`{
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^19.0.0"
+  }
+}`}</pre>
+                  <div>
+                    <article><span>SCRIPTS</span><p>Friendly command names that npm connects to development tools.</p></article>
+                    <article><span>DEPENDENCIES</span><p>Libraries your application needs in order to work.</p></article>
+                  </div>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vite-dependencies">
+                <div className="section-heading"><span>03</span><div><h3 id="vite-dependencies">Download dependencies with npm</h3><p>You do not need to copy library files into the project manually.</p></div></div>
+                <div className="dependency-commands">
+                  <article><code>npm install</code><p>Reads <code>package.json</code> and downloads everything the project already needs.</p></article>
+                  <article><code>npm install axios</code><p>Adds the Axios library to the project and records it as a dependency.</p></article>
+                </div>
+                <p className="lesson-callout">Downloaded packages go into <code>node_modules</code>. You normally work from <code>package.json</code> rather than editing that large folder yourself.</p>
+              </section>
+
+              <PageNavigation backTitle="Live Preview & HMR" onBack={() => goToSlide("slideViteDev")} nextTitle="Assets & Modules" onNext={() => goToSlide("slideViteAssets")} />
+            </section>
+          )}
+
+          {/* Vite: assets and modules */}
+          {slide === "slideViteAssets" && (
+            <section className="content-page lesson-page vite-learning-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">ORGANIZE THE PROJECT</span>
+                <h2 id="vite-assets">Assets &amp; Modules</h2>
+                <p>Vite helps organize both visual files and JavaScript. The right folder and module structure keeps a growing project easier to understand.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="vite-asset-folders">
+                <div className="section-heading"><span>01</span><div><h3 id="vite-asset-folders">src/assets or public?</h3><p>Both hold static files, but Vite treats them differently.</p></div></div>
+                <div className="asset-folder-comparison">
+                  <article>
+                    <div><span>PROCESSED</span><code>src/assets/</code></div>
+                    <p>Ideal for images, fonts, and media imported by your application.</p>
+                    <ul><li>Referenced from source code</li><li>Processed as part of the build</li><li>Can receive optimized, unique filenames</li></ul>
+                    <pre>{`import logo from "./assets/logo.png";`}</pre>
+                  </article>
+                  <article>
+                    <div><span>COPIED DIRECTLY</span><code>public/</code></div>
+                    <p>Useful when a file must keep its name or is referenced directly by URL.</p>
+                    <ul><li>Copied into the build as-is</li><li>Good for favicon.ico, PDFs, or robots.txt</li><li>Referenced from the root path</li></ul>
+                    <pre>{`<a href="/guide.pdf">Guide</a>`}</pre>
+                  </article>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vite-modules">
+                <div className="section-heading"><span>02</span><div><h3 id="vite-modules">Split JavaScript into modules</h3><p>Instead of one huge file, use smaller files with focused jobs.</p></div></div>
+                <div className="module-code-example">
+                  <div><span>math.js · EXPORT</span><pre>{`export function add(a, b) {
+  return a + b;
+}`}</pre></div>
+                  <b aria-hidden="true">→</b>
+                  <div><span>main.js · IMPORT</span><pre>{`import { add } from "./math.js";
+
+const total = add(2, 3);`}</pre></div>
+                </div>
+                <div className="module-benefits">
+                  <span>One clear job per file</span><span>Reusable functions</span><span>Easier testing</span><span>Easier teamwork</span>
+                </div>
+                <p className="lesson-callout"><strong>This idea goes beyond Vite.</strong> Importing and exporting modules is a standard modern JavaScript skill you will use across frameworks and projects.</p>
+              </section>
+
+              <PageNavigation backTitle="npm & Dependencies" onBack={() => goToSlide("slideViteNpm")} nextTitle="Build & Deployment" onNext={() => goToSlide("slideViteBuild")} />
+            </section>
+          )}
+
+          {/* Vite: production build */}
+          {slide === "slideViteBuild" && (
+            <section className="content-page lesson-page vite-learning-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">FROM PROJECT TO PUBLISHABLE FILES</span>
+                <h2 id="vite-build">Build &amp; Deployment</h2>
+                <p>During development, Vite prioritizes speed. When you are ready to publish, it creates a smaller, production-ready copy of the site.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="vite-build-command">
+                <div className="section-heading"><span>01</span><div><h3 id="vite-build-command">Create the production build</h3><p>Run the build command and look for a new output folder.</p></div></div>
+                <div className="vite-build-flow">
+                  <article><span>YOUR PROJECT</span><strong>src/ + public/</strong><p>Readable files used while developing.</p></article>
+                  <b aria-hidden="true">→ <code>npm run build</code> →</b>
+                  <article className="vite-build-flow__dist"><span>OUTPUT</span><strong>dist/</strong><p>Optimized files ready for a host.</p></article>
+                </div>
+                <div className="build-benefits">
+                  <article><span>↓</span><strong>Smaller files</strong><p>Less data for visitors to download.</p></article>
+                  <article><span>⚡</span><strong>Faster loading</strong><p>Production assets are prepared for browsers.</p></article>
+                  <article><span>↗</span><strong>Ready to deploy</strong><p>The <code>dist</code> folder can be published by a hosting service.</p></article>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vite-preview-build">
+                <div className="section-heading"><span>02</span><div><h3 id="vite-preview-build">Preview before publishing</h3><p>Test the actual production output on your own computer.</p></div></div>
+                <div className="vite-command-focus">
+                  <div><span>TERMINAL</span><code>npm run preview</code></div>
+                  <ul><li>Serves the files created inside <code>dist</code></li><li>Lets you check the production version locally</li><li>Does not publish the site to the internet</li></ul>
+                </div>
+                <p className="lesson-callout"><strong>Vite builds; a host deploys.</strong> Vite prepares the website files. Vercel, GitHub Pages, or another service makes those files available on the public internet.</p>
+              </section>
+
+              <PageNavigation backTitle="Assets & Modules" onBack={() => goToSlide("slideViteAssets")} nextTitle="Why Vite?" onNext={() => goToSlide("slideViteWhy")} />
+            </section>
+          )}
+
+          {/* Vite: motivation */}
+          {slide === "slideViteWhy" && (
+            <section className="content-page lesson-page vite-learning-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">PUT THE PIECES TOGETHER</span>
+                <h2 id="vite-why">Why use Vite?</h2>
+                <p>Vite removes repetitive setup while keeping the normal web skills—HTML, CSS, JavaScript, modules, npm, and deployment—visible and useful.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="vite-comparison">
+                <div className="section-heading"><span>01</span><div><h3 id="vite-comparison">Without Vite vs with Vite</h3><p>The main benefit is a smoother path from a blank project to a deployed website.</p></div></div>
+                <div className="vite-why-table">
+                  <div className="vite-why-table__head"><strong>Without Vite</strong><strong>With Vite</strong></div>
+                  <div><span>Manual project setup</span><span>Ready-made project</span></div>
+                  <div><span>Refresh the browser manually</span><span>Instant HMR updates</span></div>
+                  <div><span>Difficult package management</span><span>npm integration</span></div>
+                  <div><span>Manual production optimization</span><span>Easy production build</span></div>
+                  <div><span>Lots of configuration</span><span>Sensible defaults</span></div>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="vite-recap">
+                <div className="section-heading"><span>02</span><div><h3 id="vite-recap">The complete workflow</h3><p>These commands now have a clear place in the project lifecycle.</p></div></div>
+                <ol className="vite-recap-flow">
+                  <li><span>1</span><div><strong>Create</strong><code>npm create vite@latest</code></div></li>
+                  <li><span>2</span><div><strong>Install</strong><code>npm install</code></div></li>
+                  <li><span>3</span><div><strong>Develop</strong><code>npm run dev</code></div></li>
+                  <li><span>4</span><div><strong>Build</strong><code>npm run build</code></div></li>
+                  <li><span>5</span><div><strong>Check</strong><code>npm run preview</code></div></li>
+                  <li><span>6</span><div><strong>Deploy</strong><code>dist/ → hosting</code></div></li>
+                </ol>
+              </section>
+
+              <PageNavigation backTitle="Build & Deployment" onBack={() => goToSlide("slideViteBuild")} nextTitle="Deploying with Vercel" onNext={() => goToSlide("slide9")} />
+            </section>
+          )}
+
+          {/* Agentic coding fundamentals */}
+          {slide === "slideAgentic" && (
+            <section className="content-page lesson-page agentic-page">
+              <div className="lesson-intro" id="agentic-overview">
+                <span className="lesson-kicker">A NEW WAY TO BUILD SOFTWARE</span>
+                <h2>Meet your AI coding teammate</h2>
+                <p><strong>Agentic coding</strong> is working with an AI that can plan, write, debug, and improve code on your behalf. Instead of asking AI one question at a time, you give it a goal, and it helps complete the task through multiple steps.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="coding-approaches">
+                <div className="section-heading">
+                  <span>01</span>
+                  <div>
+                    <h3 id="coding-approaches">Three ways to work with code</h3>
+                    <p>The difference is how much of the task the AI can carry forward.</p>
+                  </div>
+                </div>
+                <div className="approach-table" role="table" aria-label="Coding approaches comparison">
+                  <div className="approach-table__head" role="row">
+                    <strong role="columnheader">Traditional Coding</strong>
+                    <strong role="columnheader">AI-Assisted Coding</strong>
+                    <strong role="columnheader">Agentic Coding</strong>
+                  </div>
+                  <div className="approach-table__row" role="row">
+                    <p role="cell">You write everything yourself.</p>
+                    <p role="cell">AI helps answer questions or generate snippets.</p>
+                    <p role="cell">AI acts like a software teammate that plans, writes, tests, and iterates.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="agentic-importance">
+                <div className="section-heading">
+                  <span>02</span>
+                  <div>
+                    <h3 id="agentic-importance">Why it matters</h3>
+                    <p>Agentic coding changes your role from typing every line to directing, reviewing, and deciding.</p>
+                  </div>
+                </div>
+                <div className="agentic-benefit-grid">
+                  <article><span>⚡</span><h4>Move faster</h4><p>Delegate setup, repetitive edits, tests, and documentation while you focus on the outcome.</p></article>
+                  <article><span>↗</span><h4>Learn by reviewing</h4><p>Ask the agent to explain unfamiliar code, trade-offs, and errors in plain language.</p></article>
+                  <article><span>◎</span><h4>Handle bigger tasks</h4><p>An agent can coordinate changes across several files and keep working through test failures.</p></article>
+                </div>
+                <div className="agent-capabilities">
+                  <h4>What can an AI coding agent do?</h4>
+                  <ul>
+                    <li>Inspect a project and propose a plan</li>
+                    <li>Create and edit files</li>
+                    <li>Run commands, builds, and tests</li>
+                    <li>Read errors and debug problems</li>
+                    <li>Refactor and improve existing code</li>
+                    <li>Explain its work for human review</li>
+                  </ul>
+                </div>
+                <p className="agentic-safety-note"><strong>You stay accountable.</strong> An agent can act, but you decide the goal, permissions, and whether the result is safe to ship.</p>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="agentic-habits">
+                <div className="section-heading">
+                  <span>03</span>
+                  <div>
+                    <h3 id="agentic-habits">Six habits for good agentic coding</h3>
+                    <p>Strong results come from a careful working loop—not blind acceptance.</p>
+                  </div>
+                </div>
+                <ol className="habit-grid">
+                  <li><span>01</span><strong>Break big tasks into smaller prompts.</strong><p>Give the agent one clear milestone at a time.</p></li>
+                  <li><span>02</span><strong>Test after every change.</strong><p>Catch problems while the change is still easy to understand.</p></li>
+                  <li><span>03</span><strong>Use Git commits frequently.</strong><p>Create safe checkpoints you can compare or restore.</p></li>
+                  <li><span>04</span><strong>Read generated code before accepting it.</strong><p>Check logic, security, accessibility, and project fit.</p></li>
+                  <li><span>05</span><strong>Verify AI-generated information.</strong><p>Confirm APIs, package versions, and important claims.</p></li>
+                  <li><span>06</span><strong>Keep prompts clear and specific.</strong><p>State the context, constraints, outcome, and checks.</p></li>
+                </ol>
+              </section>
+
+              <PageNavigation
+                backTitle="Home"
+                onBack={() => goToSlide("slide1")}
+                nextTitle="Coding agents & builders"
+                onNext={() => goToSlide("slideAgents")}
+              />
+            </section>
+          )}
+
+          {/* Coding agents and website builders */}
+          {slide === "slideAgents" && (
+            <section className="content-page lesson-page agent-tools-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">CHOOSE THE RIGHT WORKSPACE</span>
+                <h2 id="agents-overview">Different kinds of coding agents</h2>
+                <p>Some agents work inside a codebase and terminal. Others provide an agent-first workspace for coordinating work. The best choice depends on your task and how much control you need.</p>
+              </div>
+
+              <div className="agent-profile-grid">
+                <article className="agent-profile agent-profile--claude">
+                  <div className="agent-profile__top"><span>CC</span><div><small>ANTHROPIC</small><h3>Claude Code</h3></div></div>
+                  <p>A coding agent for the terminal, IDE, and cloud that reads a codebase, edits files, runs tests, and iterates.</p>
+                  <dl><div><dt>Access</dt><dd><span className="tier-pill tier-pill--paid">Paid</span> Included with paid Claude plans or pay-as-you-go API usage; Claude’s general chat has a free plan, but Claude Code is listed with paid plans.</dd></div><div><dt>Excels at</dt><dd>Understanding large codebases, multi-file refactors, careful explanations, and terminal workflows.</dd></div></dl>
+                </article>
+                <article className="agent-profile agent-profile--google">
+                  <div className="agent-profile__top"><span>AG</span><div><small>GOOGLE</small><h3>Antigravity</h3></div></div>
+                  <p>An agent-first development platform with desktop, IDE, and CLI experiences for managing autonomous work.</p>
+                  <dl><div><dt>Access</dt><dd><span className="tier-pill tier-pill--free">Free tier</span> Individuals can start at $0 with basic weekly limits; paid Google AI plans increase capacity.</dd></div><div><dt>Excels at</dt><dd>Parallel agents, browser control and verification, multimodal tasks, and coordinating work across projects.</dd></div></dl>
+                </article>
+                <article className="agent-profile agent-profile--openai">
+                  <div className="agent-profile__top"><span>OX</span><div><small>OPENAI</small><h3>Codex</h3></div></div>
+                  <p>A coding agent across desktop, CLI, IDE, and cloud that helps write, review, test, and ship code.</p>
+                  <dl><div><dt>Access</dt><dd><span className="tier-pill tier-pill--free">Free tier</span> Included across ChatGPT plans, including Free and Go, with limits that vary by plan.</dd></div><div><dt>Excels at</dt><dd>End-to-end repository tasks, code review, test-driven iteration, parallel work, and long-running delegation.</dd></div></dl>
+                </article>
+              </div>
+
+              <p className="pricing-stamp">Plan availability checked 30 July 2026. Limits and models can change—always verify the product’s current pricing page.</p>
+
+              <section className="lesson-section" aria-labelledby="agent-summary">
+                <div className="section-heading">
+                  <span>01</span>
+                  <div><h3 id="agent-summary">Quick comparison</h3><p>Use this table as a starting point, not a permanent ranking.</p></div>
+                </div>
+                <div className="agent-summary-table">
+                  <table>
+                    <thead><tr><th>Tool</th><th>Made by</th><th>Free tier?</th><th>Best starting point</th></tr></thead>
+                    <tbody>
+                      <tr><th>Claude Code</th><td>Anthropic</td><td>No dedicated free Claude Code tier</td><td>Deep codebase work in a terminal or IDE</td></tr>
+                      <tr><th>Antigravity</th><td>Google</td><td>Yes, with basic limits</td><td>Agent-first, multimodal and browser-verified workflows</td></tr>
+                      <tr><th>Codex</th><td>OpenAI</td><td>Yes, usage-limited</td><td>Delegating, reviewing, and shipping repository tasks</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
+
+              <section className="lesson-section" aria-labelledby="website-builders">
+                <div className="section-heading">
+                  <span>02</span>
+                  <div><h3 id="website-builders">Prompt-to-website platforms</h3><p>These tools hide more of the code setup so you can go from an idea to a hosted web app quickly.</p></div>
+                </div>
+                <div className="builder-platforms">
+                  <article>
+                    <div className="builder-platforms__brand"><span>♥</span><div><small>AI SOFTWARE ENGINEER</small><h4>Lovable</h4></div></div>
+                    <p>Describe an interface or web app in chat, refine the generated result visually, connect services, and publish.</p>
+                    <ul><li>Good for polished prototypes and frontend-first web apps</li><li>GitHub and cloud workflows available</li><li>Free plan includes limited build and cloud credits</li></ul>
+                    <a href="https://lovable.dev/" target="_blank" rel="noreferrer">Visit Lovable ↗</a>
+                  </article>
+                  <article>
+                    <div className="builder-platforms__brand"><span>B44</span><div><small>WIX</small><h4>Base44</h4></div></div>
+                    <p>Build an app through natural language with database, authentication, analytics, and integrations included.</p>
+                    <ul><li>Good for data-driven apps and internal tools</li><li>Backend features are built into the platform</li><li>Free plan includes limited message and integration credits</li></ul>
+                    <a href="https://base44.com/" target="_blank" rel="noreferrer">Visit Base44 ↗</a>
+                  </article>
+                </div>
+                <p className="lesson-callout"><strong>Agent or builder?</strong> Choose a coding agent when you want direct codebase control. Choose a prompt-to-website platform when speed, built-in hosting, and managed services matter more than controlling every technical detail.</p>
+              </section>
+
+              <PageNavigation
+                backTitle="Agentic coding basics"
+                onBack={() => goToSlide("slideAgentic")}
+                nextTitle="Prompt engineering"
+                onNext={() => goToSlide("slidePrompts")}
+              />
+            </section>
+          )}
+
+          {/* Prompt engineering */}
+          {slide === "slidePrompts" && (
+            <section className="content-page lesson-page prompt-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">DIRECT THE WORK</span>
+                <h2 id="prompts-overview">Prompt engineering</h2>
+                <p><strong>Prompt engineering</strong> is the practice of giving AI clear instructions, useful context, and a definition of success. It matters because the agent can only make good decisions from the goal and evidence you provide.</p>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="prompt-importance">
+                <div className="section-heading">
+                  <span>01</span>
+                  <div>
+                    <h3 id="prompt-importance">Why prompt engineering matters</h3>
+                    <p>A thoughtful prompt gives the AI a reliable brief, helping it produce work that is useful, relevant, and easier to trust.</p>
+                  </div>
+                </div>
+                <div className="prompt-importance-grid">
+                  <article><span>01</span><h4>Better results</h4><p>Clear goals and context reduce guesswork, so the first response is more accurate and relevant.</p></article>
+                  <article><span>02</span><h4>Less rework</h4><p>Constraints and success checks prevent avoidable mistakes and reduce repeated corrections.</p></article>
+                  <article><span>03</span><h4>More control</h4><p>You guide the scope, style, tools, and quality instead of leaving important decisions to chance.</p></article>
+                  <article><span>04</span><h4>Safer collaboration</h4><p>Explicit boundaries help the AI avoid unwanted changes and make its output easier for you to review.</p></article>
+                </div>
+                <p className="prompt-importance-note"><strong>Think of a prompt as a project brief:</strong> the clearer the brief, the more confidently the AI can help you reach the intended outcome.</p>
+              </section>
+
+              <div className="prompt-comparison">
+                <article className="prompt-example prompt-example--bad"><span>WEAK PROMPT</span><h3>“Make me a website.”</h3><p>Missing audience, content, style, technology, constraints, and success checks.</p></article>
+                <article className="prompt-example prompt-example--good"><span>STRONG PROMPT</span><h3>“Build a responsive one-page study timer…”</h3><p>Use React and the existing purple styles. Include 25/5 minute modes, start, pause, and reset. Do not add packages. Run the build and check mobile layout.</p></article>
+              </div>
+
+              <section className="lesson-section" aria-labelledby="race-framework">
+                <div className="section-heading">
+                  <span>02</span>
+                  <div><h3 id="race-framework">Frame prompts with RACE</h3><p>Use four simple ingredients to make your request actionable and testable.</p></div>
+                </div>
+                <div className="race-grid">
+                  <article><span>R</span><div><h4>Role</h4><p>Who should the AI act as?</p><code>You are a frontend developer…</code></div></article>
+                  <article><span>A</span><div><h4>Action</h4><p>What should it do?</p><code>Build a study timer…</code></div></article>
+                  <article><span>C</span><div><h4>Context</h4><p>What must it know?</p><code>This is a React course app…</code></div></article>
+                  <article><span>E</span><div><h4>Expectation</h4><p>What does “done” mean?</p><code>Test all controls and mobile layout.</code></div></article>
+                </div>
+              </section>
+
+              <section className="lesson-section" id="race-exercise" aria-labelledby="race-exercise-title">
+                <div className="section-heading">
+                  <span>03</span>
+                  <div><h3 id="race-exercise-title">Exercise: build a prompt from scratch</h3><p>Fill in each RACE field. Your complete prompt appears on the right.</p></div>
+                </div>
+                <div className="race-builder">
+                  <div className="race-builder__fields">
+                    {[
+                      ["role", "R · Role", "e.g. You are a careful React developer"],
+                      ["action", "A · Action", "e.g. Build a searchable glossary"],
+                      ["context", "C · Context", "e.g. Use the existing course card styles"],
+                      ["expectation", "E · Expectation", "e.g. Test search and responsive layout"],
+                    ].map(([id, label, placeholder]) => (
+                      <label key={id}><span>{label}</span><textarea value={raceDraft[id]} placeholder={placeholder} onChange={(event) => setRaceDraft((current) => ({ ...current, [id]: event.target.value }))} /></label>
+                    ))}
+                  </div>
+                  <div className="race-builder__output">
+                    <div><span>PROMPT PREVIEW</span><small>{Object.values(raceDraft).filter(Boolean).length}/4 parts</small></div>
+                    <p>{raceDraft.role || "[Role]"}</p>
+                    <p>{raceDraft.action || "[Action]"}</p>
+                    <p>{raceDraft.context || "[Context]"}</p>
+                    <p>{raceDraft.expectation || "[Expectation]"}</p>
+                    {Object.values(raceDraft).every((value) => value.trim()) && <strong>✓ Your prompt has all four RACE ingredients.</strong>}
+                  </div>
+                </div>
+              </section>
+
+              <PageNavigation
+                backTitle="Coding agents & builders"
+                onBack={() => goToSlide("slideAgents")}
+                nextTitle="Plan mode"
+                onNext={() => goToSlide("slidePlanMode")}
+              />
+            </section>
+          )}
+
+          {/* Plan mode */}
+          {slide === "slidePlanMode" && (
+            <section className="content-page lesson-page plan-mode-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">THINK BEFORE EDITING</span>
+                <h2 id="plan-mode-overview">Plan mode</h2>
+                <p><strong>Plan mode</strong> asks the agent to inspect, reason, and propose an approach before changing code. It gives you a moment to correct the direction while changes are still cheap.</p>
+              </div>
+              <div className="plan-importance">
+                <div><span>Without a plan</span><p>Prompt → edits → surprise → undo</p></div>
+                <b>VS</b>
+                <div><span>With plan mode</span><p>Goal → inspect → agree → implement → verify</p></div>
+              </div>
+              <section className="lesson-section" aria-labelledby="plan-contents">
+                <div className="section-heading"><span>01</span><div><h3 id="plan-contents">What belongs in a useful plan?</h3><p>A strong plan makes scope, sequence, and success visible.</p></div></div>
+                <dl className="plan-parts">
+                  <div><dt>Goal</dt><dd>The exact user outcome.</dd></div>
+                  <div><dt>Context</dt><dd>Relevant architecture, patterns, and constraints.</dd></div>
+                  <div><dt>Steps</dt><dd>An ordered implementation approach.</dd></div>
+                  <div><dt>Files</dt><dd>Likely edits and anything that must not change.</dd></div>
+                  <div><dt>Risks</dt><dd>Unknowns, trade-offs, and decisions to confirm.</dd></div>
+                  <div><dt>Checks</dt><dd>Tests and acceptance criteria that prove completion.</dd></div>
+                </dl>
+                <p className="lesson-callout"><strong>Plan mode is most useful</strong> for unfamiliar repositories, multi-file changes, risky refactors, or tasks with several possible designs. A tiny typo fix usually does not need a long plan.</p>
+              </section>
+              <section className="lesson-section" id="plan-builder-exercise" aria-labelledby="plan-builder-heading">
+                <div className="section-heading"><span>02</span><div><h3 id="plan-builder-heading">Exercise: assemble the plan</h3><p>Build the document from the same kinds of blocks you used in the YAML exercise.</p></div></div>
+                <PlanModeBuilder />
+              </section>
+              <PageNavigation backTitle="Prompt engineering" onBack={() => goToSlide("slidePrompts")} nextTitle="Debugging with AI" onNext={() => goToSlide("slideAgentDebug")} />
+            </section>
+          )}
+
+          {/* Agentic debugging */}
+          {slide === "slideAgentDebug" && (
+            <section className="content-page lesson-page agent-debug-page">
+              <div className="lesson-intro">
+                <span className="lesson-kicker">USE ERRORS AS EVIDENCE</span>
+                <h2 id="agent-debugging-overview">Debugging with AI</h2>
+                <p><strong>Debugging</strong> is the process of finding, understanding, and fixing the cause of a problem. It matters because software rarely works perfectly on the first attempt—and a quick guess can hide the real cause.</p>
+              </div>
+              <section className="lesson-section" aria-labelledby="debug-ai-role">
+                <div className="section-heading"><span>01</span><div><h3 id="debug-ai-role">How AI can help</h3><p>Give the agent evidence and use it as a reasoning partner, not a magic “fix everything” button.</p></div></div>
+                <div className="debug-ai-capabilities">
+                  <article><span>?</span><h4>Explain</h4><p>Translate an error message or stack trace into plain language.</p></article>
+                  <article><span>⌕</span><h4>Investigate</h4><p>Trace related code and suggest likely root causes.</p></article>
+                  <article><span>⌁</span><h4>Fix carefully</h4><p>Propose a small change and explain why it should work.</p></article>
+                  <article><span>✓</span><h4>Verify</h4><p>Run targeted tests and check whether the behaviour changed.</p></article>
+                </div>
+              </section>
+              <section className="lesson-section" aria-labelledby="debug-workflow-heading">
+                <div className="section-heading"><span>02</span><div><h3 id="debug-workflow-heading">The debugging workflow</h3><p>Move from evidence to understanding, then change and verify.</p></div></div>
+                <ol className="debug-process">
+                  <li><span>Error</span><p>Read the exact message</p></li><li aria-hidden="true">↓</li>
+                  <li><span>Understand</span><p>Work out what it means</p></li><li aria-hidden="true">↓</li>
+                  <li><span>Ask AI</span><p>Share evidence and relevant code</p></li><li aria-hidden="true">↓</li>
+                  <li><span>Fix</span><p>Review and apply the smallest change</p></li><li aria-hidden="true">↓</li>
+                  <li><span>Test again</span><p>Repeat the action and check nearby behaviour</p></li>
+                </ol>
+              </section>
+              <section className="lesson-section" id="agent-debugging-lab" aria-labelledby="debug-lab-heading">
+                <div className="section-heading"><span>03</span><div><h3 id="debug-lab-heading">Exercise: debug a broken interface</h3><p>Follow the workflow to rescue a task-list mockup.</p></div></div>
+                <AgenticDebugLab />
+              </section>
+              <PageNavigation backTitle="Plan mode" onBack={() => goToSlide("slidePlanMode")} nextTitle="VS Code Basics" onNext={() => goToSlide("slideVSCode")} />
             </section>
           )}
 
@@ -2016,8 +2918,8 @@ vercel logs --environment production --status-code 5xx --since 5m`}</pre>
                 </ul>
               </section>
               <PageNavigation
-                backTitle="Vercel Git deployments"
-                onBack={() => goToSlide("slideVercelGit")}
+                backTitle="Debugging on Vercel"
+                onBack={() => goToSlide("slideVercelDebug")}
                 nextTitle="Take the quiz"
                 onNext={() => goToSlide("slide7")}
               />
