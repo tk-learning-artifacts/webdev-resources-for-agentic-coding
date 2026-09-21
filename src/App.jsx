@@ -83,7 +83,7 @@ export default function WebDevToolchain101() {
       <button style={{ position: 'fixed', top: '20px', right: '20px', zIndex: 1000 }} onClick={() => setSlide("slide1")}>🏠 Home</button>
       <div style={{ fontFamily: 'Arial, Helvetica, sans-serif', background: '#f5f7fa', margin: 0 }}>
         <style>{`
-          :root{--primary:#4f46e5;--accent:#4338ca;--bg:#f5f7fa}
+          :root{--primary:#0d9488;--accent:#0f766e;--bg:#f0fdfa}
           body{margin:0;background:var(--bg);color:#111}
           h2{font-size:28px;font-weight:700;margin-bottom:16px}
           h3{font-size:22px;font-weight:700;margin-top:20px;margin-bottom:12px}
