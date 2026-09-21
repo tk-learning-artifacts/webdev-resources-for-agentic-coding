@@ -104,6 +104,8 @@ export default function WebDevToolchain101() {
           .quiz-option{display:block;margin:6px 0}
           .explain{background:#fbfbfb;border-left:4px solid #eee;padding:8px;margin-top:8px}
           .controls{margin-top:12px}
+          .progress-track{background:#e5e7eb;border-radius:8px;height:10px;overflow:hidden;margin:12px 0}
+          .progress-fill{background:var(--primary);height:100%;transition:width 200ms ease}
         `}</style>
 
         <header>Web Dev Toolchain 101</header>
@@ -324,9 +326,17 @@ After deploying, Vercel provides a live URL you can share. Each push to the link
               <h2>📝 Quiz — Multiple Choice</h2>
 
               {!graded && (
-                <p aria-live="polite" style={{ fontWeight: 'bold' }}>
-                  Answered {answeredCount} of {quiz.length}
-                </p>
+                <>
+                  <p aria-live="polite">
+                    {answeredCount} of {quiz.length} answered
+                  </p>
+                  <div className="progress-track">
+                    <div
+                      className="progress-fill"
+                      style={{ width: `${(answeredCount / quiz.length) * 100}%` }}
+                    />
+                  </div>
+                </>
               )}
 
               <div id="quizArea">
