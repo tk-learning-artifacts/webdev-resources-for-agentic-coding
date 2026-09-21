@@ -4,6 +4,16 @@ export default function WebDevToolchain101() {
   const [slide, setSlide] = useState("slide1");
   const [answers, setAnswers] = useState([]);
   const [graded, setGraded] = useState(false);
+  const [confirmSubmit, setConfirmSubmit] = useState(false);
+
+  const modules = [
+    { slide: 'slideVSCode', title: '💻 VS Code Basics', blurb: 'Learn the essentials of Visual Studio Code.' },
+    { slide: 'slide2', title: '🧩 Git Basics', blurb: 'Learn what Git is and how version control works.' },
+    { slide: 'slide3', title: '🐙 GitHub', blurb: 'Understand online repos and collaboration.' },
+    { slide: 'slide4', title: '⚙️ GitHub Actions', blurb: 'Automate tasks with CI/CD.' },
+    { slide: 'slide5', title: '⚡ Vite', blurb: 'Build super-fast frontend apps.' },
+    { slide: 'slide9', title: '▲ Vercel', blurb: 'Deploy your Git repo to the web.' }
+  ];
 
   const quiz = [
     { q: 'What is Vercel used for?', opts: ['Hosting websites easily','Writing backend APIs only','Designing UI mockups','Running Python locally'], a: 0 },
@@ -34,8 +44,18 @@ export default function WebDevToolchain101() {
     setAnswers(copy);
   };
 
-  const gradeQuiz = () => setGraded(true);
-  const resetQuiz = () => { setAnswers(Array(quiz.length).fill(null)); setGraded(false); };
+  const answeredCount = answers.filter((a) => a !== null && a !== undefined).length;
+  const unanswered = quiz.length - answeredCount;
+
+  const gradeQuiz = () => {
+    if (unanswered > 0 && !confirmSubmit) {
+      setConfirmSubmit(true);
+      return;
+    }
+    setGraded(true);
+    setConfirmSubmit(false);
+  };
+  const resetQuiz = () => { setAnswers(Array(quiz.length).fill(null)); setGraded(false); setConfirmSubmit(false); };
 
   const explanations = [
     'Vercel is used to easily deploy websites from GitHub repositories.',
@@ -76,6 +96,10 @@ export default function WebDevToolchain101() {
           pre{background:#f0f0f0;padding:12px;border-radius:8px;overflow:auto}
           button{background:var(--primary);color:#fff;border:none;padding:10px 14px;border-radius:8px;cursor:pointer;margin:6px}
           button.secondary{background:#777}
+          .module-card{background:#fff;color:#111;margin:0;padding:24px;text-align:center;font:inherit;width:100%;display:block}
+          .module-card:hover{box-shadow:0 8px 24px rgba(79,70,229,0.18);transform:translateY(-2px)}
+          .module-card{transition:box-shadow .15s ease,transform .15s ease}
+          :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
           .hidden{display:none}
           .quiz-option{display:block;margin:6px 0}
           .explain{background:#fbfbfb;border-left:4px solid #eee;padding:8px;margin-top:8px}
@@ -92,30 +116,12 @@ export default function WebDevToolchain101() {
               <h2>Welcome!</h2>
               <p>Select a module below to begin learning:</p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginTop: '20px' }}>
-                <div className="card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setSlide('slideVSCode')}>
-                  <h3>💻 VS Code Basics</h3>
-                  <p>Learn the essentials of Visual Studio Code.</p>
-                </div>
-                <div className="card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setSlide('slide2')}>
-                  <h3>🧩 Git Basics</h3>
-                  <p>Learn what Git is and how version control works.</p>
-                </div>
-                <div className="card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setSlide('slide3')}>
-                  <h3>🐙 GitHub</h3>
-                  <p>Understand online repos and collaboration.</p>
-                </div>
-                <div className="card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setSlide('slide4')}>
-                  <h3>⚙️ GitHub Actions</h3>
-                  <p>Automate tasks with CI/CD.</p>
-                </div>
-                <div className="card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setSlide('slide5')}>
-                  <h3>⚡ Vite</h3>
-                  <p>Build super-fast frontend apps.</p>
-                </div>
-                <div className="card" style={{ cursor: 'pointer', textAlign: 'center' }} onClick={() => setSlide('slide9')}>
-                  <h3>▲ Vercel</h3>
-                  <p>Deploy your Git repo to the web.</p>
-                </div>
+                {modules.map((m) => (
+                  <button key={m.slide} type="button" className="card module-card" onClick={() => setSlide(m.slide)}>
+                    <h3>{m.title}</h3>
+                    <p>{m.blurb}</p>
+                  </button>
+                ))}
               </div>
             </section>
           )}
@@ -317,6 +323,12 @@ After deploying, Vercel provides a live URL you can share. Each push to the link
             <section className="card">
               <h2>📝 Quiz — Multiple Choice</h2>
 
+              {!graded && (
+                <p aria-live="polite" style={{ fontWeight: 'bold' }}>
+                  Answered {answeredCount} of {quiz.length}
+                </p>
+              )}
+
               <div id="quizArea">
                 {quiz.map((item, i) => (
                   <div key={i} className="card" style={{ marginBottom: '8px' }}>
@@ -346,6 +358,13 @@ After deploying, Vercel provides a live URL you can share. Each push to the link
 
               {graded && (
                 <p style={{ fontWeight: 'bold' }}>Your score: {score} / {quiz.length}</p>
+              )}
+
+              {!graded && confirmSubmit && unanswered > 0 && (
+                <div className="explain" role="alert" style={{ borderLeftColor: '#b00' }}>
+                  You still have <strong>{unanswered}</strong> unanswered question{unanswered === 1 ? '' : 's'},
+                  which will be marked wrong. Press <strong>Submit Answers</strong> again to submit anyway.
+                </div>
               )}
 
               <div className="controls">
