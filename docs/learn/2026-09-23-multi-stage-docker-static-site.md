@@ -34,7 +34,7 @@ The first alternative is to skip the second stage and just run npm run preview o
 
 The second alternative is Coolify's Nixpacks or static build pack, which detects the project type and builds it for you with no Dockerfile. That is less to maintain, but the build is a black box: you can't easily control the Node version, the caching headers, or the fallback behaviour, and it's harder to reproduce locally. With a Dockerfile, running docker build on your laptop produces the same image Coolify will run, which is how this setup was tested.
 
-The third alternative is a static host such as GitHub Pages, Netlify or Cloudflare Pages. The CNAME file in the repo suggests this site has lived on GitHub Pages before. Those hosts are free and put a global CDN (content delivery network) in front of the site, which a single Coolify server doesn't give you. You'd pick Coolify when you want everything on infrastructure you control, alongside other services on the same box.
+The third alternative is a static host such as GitHub Pages, Netlify or Cloudflare Pages. Those hosts are free and put a global CDN (content delivery network) in front of the site, which a single Coolify server doesn't give you. You'd pick Coolify when you want everything on infrastructure you control, alongside other services on the same box. Our Coolify server also hands out subdomains under snack dot tinkertofu dot com automatically, so there is no DNS (Domain Name System) record to set up per project.
 
 ## Failure modes to watch for
 
