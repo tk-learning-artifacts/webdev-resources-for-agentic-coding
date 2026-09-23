@@ -7,7 +7,7 @@ export default function WebDevToolchain101() {
   const [confirmSubmit, setConfirmSubmit] = useState(false);
 
   const modules = [
-    { slide: 'slideVSCode', title: '💻 VS Code Basics', blurb: 'Apple Apple Apple Apple Apple. Learn the essentials of Visual Studio Code.' },
+    { slide: 'slideVSCode', title: '💻 VS Code Basics', blurb: 'Learn the essentials of Visual Studio Code.' },
     { slide: 'slide2', title: '🧩 Git Basics', blurb: 'Learn what Git is and how version control works.' },
     { slide: 'slide3', title: '🐙 GitHub', blurb: 'Understand online repos and collaboration.' },
     { slide: 'slide4', title: '⚙️ GitHub Actions', blurb: 'Automate tasks with CI/CD.' },
